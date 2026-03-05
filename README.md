@@ -6,9 +6,13 @@ RunojAN es una API REST que transforma datos brutos de crímenes urbanos reales 
 ## ¿Qué problema resuelve?
 Los datasets de crímenes urbanos son vastos, fríos y técnicos. Contienen miles de registros con campos como tipo de delito, hora, barrio o estado del caso, pero su consulta directa requiere conocimientos de análisis de datos y no aporta ninguna dimensión humana ni narrativa. Este sistema resuelve tres problemas concretos:
 
-Problema 1 — Acceso técnico: explorar un DATASET de millones de registros es inaccesible para usuarios no especializados.
-Problema 2 — Falta de predicción: no existe una manera sencilla de estimar si un crimen sin resolver terminará en arresto.
-Problema 3 — Ausencia de valor narrativo: los datos existen pero no comunican, no emocionan ni cuentan una historia.
+## Problemas
+
+| #           | Problema                    | Descripción                                                                                   |
+|:------------|:----------------------------|:----------------------------------------------------------------------------------------------|
+| Problema 1  | Acceso técnico              | Explorar un dataset de millones de registros es inaccesible para usuarios no especializados   |
+| Problema 2  | Falta de predicción         | No existe una manera sencilla de estimar si un crimen sin resolver terminará en arresto       |
+| Problema 3  | Ausencia de valor narrativo | Los datos existen pero no comunican, no emocionan ni cuentan una historia                     |
 
 # ¿Para quién está pensado?
 El proyecto está dirigido a tres perfiles de usuario:
@@ -26,9 +30,9 @@ La diferencia fundamental en nuestro sistema es técnica y experiencial. Un note
 # ¿Por qué es necesario cada componente?
 El caso de uso central es el siguiente: un usuario introduce los datos de un crimen — tipo, barrio, hora, día, uso de arma o ID de crimen del dataset — y el sistema responde con tres capas de valor que solo son posibles combinando los tres componentes:
 
-Machine Learning (Trururu): sin este modelo no existe manera de estimar la probabilidad de resolución del caso. Es el componente predictivo que da utilidad práctica al sistema.
-Hugging Face (Zero-Shot Classification): sin este modelo, el crimen llega a la IA Generativa como un dato técnico sin matiz dramático. La clasificación previa — crimen pasional, robo desesperado, venganza organizada, ect — es la que le indica a la IA Generativa el tono narrativo exacto que debe usar.
-IA Generativa: sin este componente, el sistema solo devuelve porcentajes y etiquetas. la IA es quien transforma esos datos en una historia que el usuario quiera leer, cumpliendo el objetivo narrativo central del proyecto.
+- Machine Learning (Trururu): sin este modelo no existe manera de estimar la probabilidad de resolución del caso. Es el componente predictivo que da utilidad práctica al sistema.
+- Hugging Face (Zero-Shot Classification): sin este modelo, el crimen llega a la IA Generativa como un dato técnico sin matiz dramático. La clasificación previa — crimen pasional, robo desesperado, venganza organizada, ect — es la que le indica a la IA Generativa el tono narrativo exacto que debe usar.
+- IA Generativa: sin este componente, el sistema solo devuelve porcentajes y etiquetas. la IA es quien transforma esos datos en una historia que el usuario quiera leer, cumpliendo el objetivo narrativo central del proyecto.
 
 # DATASET ELEGIDO
 
@@ -36,12 +40,12 @@ IA Generativa: sin este componente, el sistema solo devuelve porcentajes y etiqu
 ### LOS ANGELES CRIMEN DATA 2020-2023
  * #### https://www.kaggle.com/datasets/venkatsairo4899/los-angeles-crime-data-2020-2023?select=Crime_Data_from_2020_to_Present.csv
 
-TIPO DE PROBLEMA: CLASIFICACION
+# TIPO DE PROBLEMA: CLASIFICACION
 
-Este dataset es adecuado para:
-Modelo Machine Learning: Nos permite clasificar si un crimen lleva arresto o no en base a los registros del crimen.
-Modelo Preentrenado: Podemos etiquetar el crimen en base a los datos que nos ofrece para darle un matiz narrativo.
-IA Generativa: Nos da una idea mas visual, literaria e interesante del crimen dandole al usuario una experiencia narrativa , accesible y agradable.
+## Este dataset es adecuado para:
+- Modelo Machine Learning: Nos permite clasificar si un crimen lleva arresto o no en base a los registros del crimen.
+- Modelo Preentrenado: Podemos etiquetar el crimen en base a los datos que nos ofrece para darle un matiz narrativo.
+- IA Generativa: Nos da una idea mas visual, literaria e interesante del crimen dandole al usuario una experiencia narrativa , accesible y agradable.
 
 # Tipo de aplicacion
 * Servicio predictivo
@@ -53,49 +57,38 @@ El usuario hace una peticion a trabes del endpoint POST/Narrate , le envia los d
 
 Nuestro modelo nos dice si este crimen lleva un arresto o no, el modelo preentrenado etiqueta este crimen y la IA genera una narracion en base a esto.
 
-# Arquitectura y encaje de piezas
-## 2.1 Modelo propio de Machine Learning
-* Clasificacion
-* Status Desc
-* Mediante endpoints
+## 2. Arquitectura y encaje de piezas
 
-## 2.2 Modelo de Hugging Face
-* Clasificacion
-* Una etiqueta al crime
-* Mediante Post y Gets
+| Componente               | Función        | Detalle                  | Integración          |
+|:-------------------------|:---------------|:-------------------------|:---------------------|
+| 2.1 Modelo propio (ML)   | Clasificación  | Status Desc              | Mediante endpoints   |
+| 2.2 Modelo Hugging Face  | Clasificación  | Una etiqueta al crime    | Mediante Post y Gets |
+| 2.3 Modelo IA Generativa | Narrativa      | Generación de texto      | Mediante prompts     |
 
-## 2.3 Modelo IA generativa
-* Narrativa
-* Mediante pronts
+## 2.4 Exposición — FastAPI Endpoints
 
-## 2.4 Exposicion
-* Fast api
-* ENDPOINTS:
-- Consulta de Datos
-GET/crimesLista crímenes del dataset con paginación
-GET/crimes/{id}Obtiene un crimen específico por ID
-
-- Modelo MachineLearning
-POST/predict/arrestoPredice si el crimen será resuelto con arresto
-
-- Huggin Face
-POST/classify/dramatismoClasifica el crimen en categoría dramática
-POST/classify/tonoDetermina el tono narrativo ideal
-GET/classify/etiquetasLista todas las etiquetas dramáticas disponibles
-
-- IA generativa
-POST/narrate/crime Narra el crimen como una novela negra 
+| Categoría            | Método | Endpoint                  | Descripción                                      |
+|:---------------------|:------:|:--------------------------|:-------------------------------------------------|
+| Consulta de Datos    | GET    | `/crimes`                 | Lista crímenes del dataset con paginación        |
+| Consulta de Datos    | GET    | `/crimes/{id}`            | Obtiene un crimen específico por ID              |
+| Machine Learning     | POST   | `/predict/arresto`        | Predice si el crimen será resuelto con arresto   |
+| Hugging Face         | POST   | `/classify/dramatismo`    | Clasifica el crimen en categoría dramática       |
+| Hugging Face         | POST   | `/classify/tono`          | Determina el tono narrativo ideal                |
+| Hugging Face         | GET    | `/classify/etiquetas`     | Lista todas las etiquetas dramáticas disponibles |
+| IA Generativa        | POST   | `/narrate/crime`          | Narra el crimen como una novela negra            |
 
 ## IDEAS GENERALES 
 1. En base a los arrestados en el dataset te diga que probabilidad hay de arresto a aquellos que aun estan siendo investigados, el modelo de ML te dice si llevan arresto o no
 2. El modelo de HUggin Facce clasifica el crimen y le da un tono sentimental
 3. La IA generativa genera una historia oscura en base al crimen
 
-# FLUJO 
-Dataset (crimen real)
-      ↓
-/predict   →  Random Forest  →  probabilidad de arresto: 23%
-      ↓
-/classify  →  HuggingFace  →  "robo desesperado" (61%)
-      ↓
-/narrate   →  Claude  →  capítulo de novela negra con ese tono
+## 3. Flujo Funcional
+
+| Paso | Actor       | Acción                                                                 | Componente           | Output                                      |
+|:----:|:------------|:-----------------------------------------------------------------------|:---------------------|:--------------------------------------------|
+| 1    | Usuario     | Envía datos del crimen o un ID existente                               | `POST /narrate/crime`| JSON con campos del crimen                  |
+| 2    | Sistema     | Recupera o valida los datos del crimen                                 | Dataset LA 2020-2023 | Registro estructurado                       |
+| 3    | ML propio   | Clasifica si el crimen terminará en arresto                            | Modelo ML            | Probabilidad de arresto (`arrest: true/false`) |
+| 4    | Hugging Face| Etiqueta el crimen con una categoría dramática y determina el tono     | Zero-Shot Classifier | Etiqueta narrativa (ej: *crimen pasional*)  |
+| 5    | IA Generativa| Recibe datos + predicción + etiqueta y genera la narrativa            | Modelo Generativo    | Prosa literaria de género negro             |
+| 6    | Usuario     | Recibe la respuesta completa del sistema                               | API Response         | Predicción + Etiqueta + Historia narrativa  |
