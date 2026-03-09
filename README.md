@@ -92,3 +92,6 @@ Nuestro modelo nos dice si este crimen lleva un arresto o no, el modelo preentre
 | 4    | Hugging Face| Etiqueta el crimen con una categoría dramática y determina el tono     | Zero-Shot Classifier | Etiqueta narrativa (ej: *crimen pasional*)  |
 | 5    | IA Generativa| Recibe datos + predicción + etiqueta y genera la narrativa            | Modelo Generativo    | Prosa literaria de género negro             |
 | 6    | Usuario     | Recibe la respuesta completa del sistema                               | API Response         | Predicción + Etiqueta + Historia narrativa  |
+
+
+Modelo de Huggin-Face: https://huggingface.co/facebook/bart-large-mnli

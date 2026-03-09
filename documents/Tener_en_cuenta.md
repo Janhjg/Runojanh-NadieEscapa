@@ -1,0 +1,1 @@
+"""Con pydantic se crea un Base_Model del cual usara la api para rellenar los predict/new"""
