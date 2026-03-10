@@ -95,3 +95,4 @@ Nuestro modelo nos dice si este crimen lleva un arresto o no, el modelo preentre
 
 
 Modelo de Huggin-Face: https://huggingface.co/facebook/bart-large-mnli
+IA generativa:  gemini-2.0-flash
