@@ -18,6 +18,20 @@ NOS CARGAMOS REGITROS CON MENOS DE DOS ANOS
 - Part 1-2 -> Gravedad del crimen (1=grave, 2=leve)
 - LOCATION -> Dirección redondeada al bloque
 
+
+
+Plan historico
+
+
+
+
+Crimen clasificado como {gravedad}: {datos['CRM_CD_DESC'].lower()} {crimen_secundario}
+Ocurrio en {datos['AREA_NAME']}, Los Angeles, en {datos['LOCATION'].lower()}
+por la {periodo} a las {hora_fmt}
+Lugar del incidente: {datos['PREMIS_DESC'].lower()}
+Victima de {datos['VICT_AGE']} años, sexo {datos['VICT_SEX']}, {arma}
+Estado actual del caso: {datos['STATUS_DESC']}
+El modelo predictivo estimacon {resolucion}
 ### Codificacion de Variables Categóricas
 ```python
 fecha=pd.to_datetime(df["DATE OCC"], errors="coerce")
