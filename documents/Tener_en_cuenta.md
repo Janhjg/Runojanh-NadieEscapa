@@ -17,3 +17,27 @@ NOS CARGAMOS REGITROS CON MENOS DE DOS ANOS
 - Status Desc-> Estado del caso (investigación, arrestado...)
 - Part 1-2 -> Gravedad del crimen (1=grave, 2=leve)
 - LOCATION -> Dirección redondeada al bloque
+
+### Codificacion de Variables Categóricas
+```python
+fecha=pd.to_datetime(df["DATE OCC"], errors="coerce")
+df["YEAR OCC"]=fecha.dt.year
+df["MONTH OCC"]=fecha.dt.month
+df["DAY OCC"]=fecha.dt.day
+df=df.drop("DATE OCC", axis=1)
+
+df['LOCATION']= encoderLocation.transform(df['LOCATION'])
+
+df['Vict Sex']= encoderVictSex.transform(df['Vict Sex'])
+
+df['Vict Descent']= encoderVictDescent.transform(df['Vict Descent'])
+
+df["Status Desc"]=df["Status Desc"].map(
+    {
+    "Adult Arrest":1,
+    "Juv Arrest":1, 
+    "Adult Other":0, 
+    "Juv Other":0
+    })
+```
+    
