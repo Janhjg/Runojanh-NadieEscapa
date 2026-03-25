@@ -58,7 +58,7 @@ def status():
     }
     
 # Dataset
- 
+
 @app.get("/crimes", response_model=CrimeListResponse, tags=["Dataset"])
 def get_crimes(limit: int = 20, offset: int = 0):
     if limit <= 0 or offset < 0:
