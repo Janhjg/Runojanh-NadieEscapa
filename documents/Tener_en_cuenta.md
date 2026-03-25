@@ -32,3 +32,26 @@ Lugar del incidente: {datos['PREMIS_DESC'].lower()}
 Victima de {datos['VICT_AGE']} años, sexo {datos['VICT_SEX']}, {arma}
 Estado actual del caso: {datos['STATUS_DESC']}
 El modelo predictivo estimacon {resolucion}
+### Codificacion de Variables Categóricas
+```python
+fecha=pd.to_datetime(df["DATE OCC"], errors="coerce")
+df["YEAR OCC"]=fecha.dt.year
+df["MONTH OCC"]=fecha.dt.month
+df["DAY OCC"]=fecha.dt.day
+df=df.drop("DATE OCC", axis=1)
+
+df['LOCATION']= encoderLocation.transform(df['LOCATION'])
+
+df['Vict Sex']= encoderVictSex.transform(df['Vict Sex'])
+
+df['Vict Descent']= encoderVictDescent.transform(df['Vict Descent'])
+
+df["Status Desc"]=df["Status Desc"].map(
+    {
+    "Adult Arrest":1,
+    "Juv Arrest":1, 
+    "Adult Other":0, 
+    "Juv Other":0
+    })
+```
+    
