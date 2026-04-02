@@ -5,20 +5,22 @@ Data set crudo -> panda -> ML -> huggin face -> IA generativa -> User
 NOS CARGAMOS REGITROS CON MENOS DE DOS ANOS
 
 ### Categorias a Usar : 
-- DR_NO -> ID único del crimen
-- DATE OCC -> Fecha del crimen
-- Time OCC -> Hora del crimen en formato 24h
-- AREA NAME -> Nombre del barrio/división policial
-- Crm Cd Desc-> Descripción del tipo de crimen
-- Vict Age-> Edad de la víctima
-- Vict Sex-> Sexo de la víctima (M/F/X/N)
-- Premis Desc-> Lugar donde ocurrió (calle, apartamento, parking...)
-- Weapon Desc-> Descripción del arma usada
-- Status Desc-> Estado del caso (investigación, arrestado...)
-- Part 1-2 -> Gravedad del crimen (1=grave, 2=leve)
-- LOCATION -> Dirección redondeada al bloque
-
-
+- ``DATE OCC``(str) **->**  Fecha del crimen
+- ``TIME OCC``(int64) **->** Hora del crimen en formato 24h
+- ``AREA``(int64) **->** referencia codificada de ``AREA NAME`` nombre del barrio/división policial
+- ``Rpt Dist No``(int64) **->** Nº sector de barrio.
+- ``Part 1-2``(int64) **->** Gravedad del crimen (1=grave, 2=leve)
+- ``Crm Cd``(int64) **->** referencia codificada de ``Crm Cd Desc`` Descripción del tipo de crimen
+- ``Vict Age``(int64) **->** Edad de la víctima
+- ``Vict Sex``(str) **->**  Sexo de la víctima (M/F/X)
+- ``Vict Descent``(str) **->** Descendencia de la víctima
+- ``Premis Cd``(int64) **->** Referencia codificada de ``AREA NAME`` Lugar donde ocurrió (calle, apartamento, parking...)
+- ``Weapon Used``Cd(int64) **->** Referencia codificada de ``Weapon Desc`` Descripción del arma usada
+- ``Status Desc``(str) **->**  Variable objetivo representa el estado del caso (investigación, arrestado...)
+- ``Crm Cd 2``(int64) **->** Codificacion de crimen adicional
+- ``Crm Cd 3``(int64) **->** Codificacion de crimen adicional
+- ``Crm Cd 4``(int64) **->** Codificacion de crimen adicional
+- ``LOCATION``(str) **->** Dirección redondeada al bloque
 
 Plan historico
 
@@ -32,6 +34,7 @@ Lugar del incidente: {datos['PREMIS_DESC'].lower()}
 Victima de {datos['VICT_AGE']} años, sexo {datos['VICT_SEX']}, {arma}
 Estado actual del caso: {datos['STATUS_DESC']}
 El modelo predictivo estimacon {resolucion}
+
 ### Codificacion de Variables Categóricas
 ```python
 fecha=pd.to_datetime(df["DATE OCC"], errors="coerce")
@@ -54,4 +57,5 @@ df["Status Desc"]=df["Status Desc"].map(
     "Juv Other":0
     })
 ```
+
     
