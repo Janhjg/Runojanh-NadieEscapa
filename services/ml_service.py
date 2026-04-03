@@ -2,6 +2,7 @@ import joblib
 import pandas as pd
 from pathlib import Path
 
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -10,7 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 ML_DIR = BASE_DIR / "models"
 
 # ── Carga del modelo y encoders ──────────────────────────────
-model         = joblib.load(ML_DIR / "crime_data_model.pkl")
+
+pipeline_model:Pipeline = joblib.load(ML_DIR / "crime_data_model.pkl")
 encoderLocation:LabelEncoder = joblib.load(ML_DIR / "encoder_Location.joblib")
 encoderVictSex = joblib.load(ML_DIR / "encoder_VictSex.joblib")
 encoderVictDescent = joblib.load(ML_DIR / "encoder_VictDescent.joblib")
@@ -89,7 +91,7 @@ def predict(data: dict):
     X = prepare_features(data)
 
     # ── Prediccion ────────────────────────────────────────────
-    clase_idx   = model.predict(X)
+    clase_idx   = pipeline_model.predict(X)
     # probs       = model.predict_proba(X)[0]
 
     # prob_arrestado     = round(float(probs[1]), 4)
@@ -107,7 +109,7 @@ def predict(data: dict):
 #         "modelo":                  "RandomForestClassifier"
 #     }
 if __name__=="__main__":
-    df=pd.read_csv("data/crimeData_subconjunto_invest.csv")
+    df=pd.read_csv("data/crimeData_subconjunto_Investigacion.csv")
     df=df.rename(columns={
             "DATE OCC":"DATE_OCC",
             "TIME OCC":"TIME_OCC",
@@ -128,7 +130,7 @@ if __name__=="__main__":
     numcaso=0
     listErrores=list()
     listpredicts=list()
-    for s in range(0, df.shape[0],1):
+    for s in range(0, 5000,1):
         datacaso = df.iloc[numcaso].to_dict()
 
         numcaso+=1
@@ -141,5 +143,5 @@ if __name__=="__main__":
         except Exception():
             listErrores.append(numcaso)
     seriePredicciones=pd.Series(listpredicts)
-    print(f"han habido {len(listErrores)} erroes y {seriePredicciones.value_counts().head()} a{len(listpredicts)}")
+    print(f"han habido {len(listErrores)} erroes y {seriePredicciones.value_counts().head()} \n longuitud de predicciones {len(listpredicts)}")
         
