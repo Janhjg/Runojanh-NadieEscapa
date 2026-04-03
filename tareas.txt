@@ -1,8 +1,4 @@
-- limpiar también en el primer documento el subconjunto de casos en investigacion dado que se divide el dataset creando dicho subconjunto antes
-  de adecuar los datos limpiar nulos etcétera tienes que pasar también en el proceso de limpieza los registros que están en investigación y luego ya los divides entre los invest y not_invest
-- piensa en la posibilidad de quitar Location ya que es informacion representada rarillamente y como lo has codificado ahora en mlservice>predict() le tienes que pasar un valor exactamente igual para el encoder
-  con los espacios iguales, etc..., a no ser que uses un entorno grafico en el que no incluyas manualmente estos datos sino que eliges de un select o spinner el cual habria que configurar con todos los posibles datos, pero solo con las categoricas?  .
--Cosas que se te pasaron(numero negativos en Vict age, espacios en location)
--piensa en la posibilidad de que el documento crimes analize lo que haga sea crear primero el crimedata from 2020 original pero limpiado sin codificación ninguna para que lo pueda 
-  usar janh en endpoint ver datos y una vez ha hecho esa limpieza general, también generará los subconjuntos de investigados y no investigados los investigados para usarlo en el entrenamiento del modelo y los noInv para probar el modelo
- se deberá de tener en cuenta que los datos de los casos en investigacion que se usarán para porbar la prediccion deberan ser iguales que los datos con los que entrené el modelo, es decir, que no haya diferentes datos por lo sencoders.
+- piensa en la posibilidad de quitar Location, a no ser que uses un entorno grafico en el que no incluyas manualmente estos datos sino que eliges de un select o spinner el cual habria que configurar con todos los posibles datos, pero solo con las categoricas?  .
+-permitir datos desconocidos en mlservice, como se ha hecho con location para las categoricas.
+-piensa en la posibilidad de que el documento crimes analize lo que haga sea crear primero el crimedata_from_2020 original pero limpiado sin codificación ninguna para que lo pueda 
+  usar janh en endpoint ver datos y una vez ha hecho esa limpieza general o si lo quiere hacer él
