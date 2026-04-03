@@ -41,24 +41,32 @@ def prepare_features(data: dict) -> pd.DataFrame:
     LOCATION
      """
 
-    # ── Encoding de variables categoricas ────────────────────
-    try:
-        Vict_Sex        = encoderVictSex.transform([data["Vict_Sex"]])[0]
-        Vict_Descent    = encoderVictDescent.transform([data["Vict_Descent"]])[0]
-        if data["LOCATION"] not in encoderLocation.classes_:
-            location=-1
-        else:
-            location        = encoderLocation.transform([data["LOCATION"]])[0]
+    # Encoding de variables categoricas
+  
+    if data["Vict_Sex"] not in encoderVictSex.classes_:
+        Vict_Sex=-1
+    else:
+        Vict_Sex = encoderVictSex.transform([data["Vict_Sex"]])[0]
+    
+    if data["Vict_Descent"] not in encoderVictDescent.classes_:
+        Vict_Descent=-1
+    else:
+        Vict_Descent = encoderVictDescent.transform([data["Vict_Descent"]])[0]
 
-        # ── Desglosando fecha ───
-        fecha=pd.to_datetime(data["DATE_OCC"], errors="coerce")
-        año=fecha.year
-        mes=fecha.month
-        dia=fecha.day
-    except ValueError():
-        raise Exception()
+    if data["LOCATION"] not in encoderLocation.classes_:
+        location=-1
+    else:
+        location = encoderLocation.transform([data["LOCATION"]])[0]
 
-    # ── Construccion del dataframe de features ────────────────
+    # Desglosando fecha
+    fecha=pd.to_datetime(data["DATE_OCC"], errors="coerce")
+    año=fecha.year
+    mes=fecha.month
+    dia=fecha.day
+    
+       
+
+    # Construccion del dataframe de features
     features = pd.DataFrame([{
         "TIME OCC":        data["TIME_OCC"],
         "AREA":            data["AREA"],
