@@ -2,3 +2,20 @@
 -piensa en la posibilidad de que el documento crimes analize lo que haga sea crear primero el crimedata_from_2020 original pero limpiado sin codificación ninguna para que lo pueda 
   usar janh en endpoint ver datos y una vez ha hecho esa limpieza general o si lo quiere hacer él
 - hacer algo con lo de las variables numericas la mayoria tienen referencia
+
+DATE OCC
+TIME OCC
+AREA
+Rpt Dist No
+Part 1-2
+Crm Cd
+Vict Age
+Vict Sex
+Vict Descent
+Premis Cd
+Weapon Used Cd
+Status Desc
+Crm Cd 2
+Crm Cd 3
+Crm Cd 4
+LOCATION
