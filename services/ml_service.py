@@ -16,6 +16,10 @@ pipeline_model:Pipeline = joblib.load(ML_DIR / "crime_data_model.pkl")
 encoderLocation:LabelEncoder = joblib.load(ML_DIR / "encoder_Location.joblib")
 encoderVictSex = joblib.load(ML_DIR / "encoder_VictSex.joblib")
 encoderVictDescent = joblib.load(ML_DIR / "encoder_VictDescent.joblib")
+mapper_area=pd.read_csv("..\\models\\mapper_area.csv")
+mapper_crm=pd.read_csv("..\\models\\mapper_crm.csv")
+mapper_premis=pd.read_csv("..\\models\\mapper_premis.csv")
+mapper_weapon=pd.read_csv("..\\models\\mapper_weapon.csv")
 
 
 def prepare_features(data: dict) -> pd.DataFrame:
@@ -64,23 +68,66 @@ def prepare_features(data: dict) -> pd.DataFrame:
     mes=fecha.month
     dia=fecha.day
     
+    #mapeando categoricas.
+    #AREA
+    if data["AREA NAME"]==None or data["AREA NAME"] not in mapper_area["AREA NAME"]:
+        areaCode=0
+    else:
+        areaCode=int(mapper_area[mapper_area["AREA NAME"]==data["AREA NAME"]]["AREA"].iloc(0))
+
+    #crimenes
+    if data["Crm Cd Desc"]==None or data["Crm Cd Desc"] not in mapper_crm["Crm Cd Desc"]:
+        Crm1Code=0
+    else:
+        Crm1Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc"]]["Crm Cd"].iloc(0))
+
+    #crimenes 2
+    if data["Crm Cd Desc 2"]==None or data["Crm Cd Desc 2"] not in mapper_crm["Crm Cd Desc"]:
+        Crm2Code=0
+    else:
+        Crm2Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc 2"]]["Crm Cd"].iloc(0))
+
+    #crimenes 3
+    if data["Crm Cd Desc 3"]==None or data["Crm Cd Desc 3"] not in mapper_crm["Crm Cd Desc"]:
+        Crm3Code=0
+    else:
+        Crm3Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc 3"]]["Crm Cd"].iloc(0))
+
+     #crimenes 4
+    if data["Crm Cd Desc 4"]==None or data["Crm Cd Desc 4"] not in mapper_crm["Crm Cd Desc"]:
+        Crm4Code=0
+    else:
+        Crm4Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc 4"]]["Crm Cd"].iloc(0))
+
+    #Premis Cd
+    if data["Premis Desc"]==None or data["Premis Desc"] not in mapper_premis["Premis Desc"]:
+        premisCode=0
+    else:
+        premisCode=int(mapper_premis[mapper_premis["Premis Desc"]==data["Premis Desc"]]["Premis Cd"].iloc(0))
+
+    #Weapon Used Cd
+    if data["Weapon Desc"]==None or data["Weapon Desc"] not in mapper_weapon["Weapon Desc"]:
+        weaponCode=0
+    else:
+        weaponCode=int(mapper_weapon[mapper_weapon["Weapon Desc"]==data["Weapon Desc"]]["Weapon Used Cd"].iloc(0))
+    
        
 
     # Construccion del dataframe de features
     features = pd.DataFrame([{
         "TIME OCC":        data["TIME_OCC"],
-        "AREA":            data["AREA"],
+        "AREA":           areaCode,
         "Rpt Dist No":     data["Rpt_Dist_No"],
         "Part 1-2":        data["Part_1-2"],
-        "Crm Cd":          data["Crm_Cd"],
+        "Crm Cd":          Crm1Code,
         "Vict Age":        data["Vict_Age"],
         "Vict Sex":        Vict_Sex,
         "Vict Descent":    Vict_Descent,
-        "Premis Cd":       data["Premis_Cd"],
-        "Weapon Used Cd":  data["Weapon_Used_Cd"],
-        "Crm Cd 2":        data["Crm_Cd_2"],
-        "Crm Cd 3":        data["Crm_Cd_3"],
-        "Crm Cd 4":        data["Crm_Cd_4"],
+        "Premis Cd":       premisCode,
+        "Weapon Used Cd":  weaponCode,
+        "Crm Cd 2":        Crm2Code,
+        "Crm Cd 3":        Crm3Code,
+        "Crm Cd 4":        Crm4Code,
         "LOCATION":        location,
         "YEAR OCC":        año,
         "MONTH OCC":       mes,
