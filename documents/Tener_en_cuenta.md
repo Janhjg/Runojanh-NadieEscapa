@@ -4,7 +4,7 @@ Data set crudo -> panda -> ML -> huggin face -> IA generativa -> User
 
 NOS CARGAMOS REGITROS CON MENOS DE DOS ANOS
 
-### Categorias a Usar : 
+### Categorias a usar para entrenamiento: 
 - ``DATE OCC``(str) **->**  Fecha del crimen
 - ``TIME OCC``(int64) **->** Hora del crimen en formato 24h
 - ``AREA``(int64) **->** referencia codificada de ``AREA NAME`` nombre del barrio/división policial
@@ -20,7 +20,23 @@ NOS CARGAMOS REGITROS CON MENOS DE DOS ANOS
 - ``Crm Cd 2``(int64) **->** Codificacion de crimen adicional
 - ``Crm Cd 3``(int64) **->** Codificacion de crimen adicional
 - ``Crm Cd 4``(int64) **->** Codificacion de crimen adicional
-- ``LOCATION``(str) **->** Dirección redondeada al bloque
+
+### Categorias a usar para input, prediccion de caso nuevo: 
+- ``DATE OCC``(str) **->**  Fecha del crimen
+- ``TIME OCC``(int64) **->** Hora del crimen en formato 24h
+- ``AREA NAME``(int64) **->** referencia codificada de ``AREA NAME`` nombre del barrio/división policial
+- ``Rpt Dist No``(int64) **->** Nº sector de barrio.
+- ``Part 1-2``(int64) **->** Gravedad del crimen (1=grave, 2=leve)
+- ``Crm Cd Desc``(int64) **->** referencia codificada de ``Crm Cd Desc`` Descripción del tipo de crimen
+- ``Vict Age``(int64) **->** Edad de la víctima
+- ``Vict Sex``(str) **->**  Sexo de la víctima (M/F/X)
+- ``Vict Descent``(str) **->** Descendencia de la víctima
+- ``Premis Desc``(int64) **->** Referencia codificada de ``AREA NAME`` Lugar donde ocurrió (calle, apartamento, parking...)
+- ``Weapon Desc``Cd(int64) **->** Referencia codificada de ``Weapon Desc`` Descripción del arma usada
+- ``Status Desc``(str) **->**  Variable objetivo representa el estado del caso (investigación, arrestado...)
+- ``Crm Cd 2``(int64) **->** Codificacion de crimen adicional
+- ``Crm Cd 3``(int64) **->** Codificacion de crimen adicional
+- ``Crm Cd 4``(int64) **->** Codificacion de crimen adicional
 
 Plan historico
 

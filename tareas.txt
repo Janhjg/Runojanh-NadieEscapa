@@ -1,6 +1,1 @@
-- piensa en la posibilidad de quitar Location, a no ser que uses un entorno grafico en el que no incluyas manualmente estos datos sino que eliges de un select o spinner el cual habria que configurar con todos los posibles datos, pero solo con las categoricas?  .
--piensa en la posibilidad de que el documento crimes analize lo que haga sea crear primero el crimedata_from_2020 original pero limpiado sin codificación ninguna para que lo pueda 
-  usar janh en endpoint ver datos y una vez ha hecho esa limpieza general o si lo quiere hacer él
-- hacer algo con lo de las variables numericas la mayoria tienen referencia
 - ml service terminar la parte de recopilacion de los datos introducidos por el usuario que se recibe como parametros de la funcion prepare features o como un diccionario?
--Quitar nulos de mappers y Location de todo de paso.
