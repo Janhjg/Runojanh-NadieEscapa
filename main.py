@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from datetime import datetime
+from typing import Optional
  
 from schemas import (
     CrimeListResponse, CrimeDetailResponse,
@@ -9,7 +10,7 @@ from schemas import (
     FullCaseNewInput, FullCaseOutput, FullCaseByIdOutput
 )
 from services import error_400, error_404, error_422, error_503, error_504
-from services import dataset_services
+from services import get_all_crimes, fetch_crime_by_id
 
 app = FastAPI(
     title="Runojanh - The Dark Chronicles",
@@ -60,25 +61,50 @@ def status():
     
 # Dataset
 
-@app.get("/crimes", response_model=CrimeListResponse, tags=["Dataset"])
-def get_crimes(limit: int = 20, offset: int = 0):
+# ── Dataset ───────────────────────────────────────────────────
+
+@app.get("/crimes", tags=["Dataset"])
+def crimes_list(
+    limit: int = 20,
+    offset: int = 0,
+    area: Optional[int] = None,
+    crm_cd: Optional[int] = None,
+    part_1_2: Optional[int] = None,
+    vict_sex: Optional[str] = None,
+    vict_descent: Optional[str] = None,
+    premis_cd: Optional[int] = None,
+    weapon_used_cd: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+):
     if limit <= 0 or offset < 0:
         error_422("limit debe ser mayor que 0 y offset no puede ser negativo")
-    return get_all_crimes(limit, offset)
  
- 
-@app.get("/crimes/{id}", response_model=CrimeDetailResponse, tags=["Dataset"])
-def get_crime_by_id_endpoint(id: int):
+    return get_all_crimes(
+        limit=limit,
+        offset=offset,
+        area=area,
+        crm_cd=crm_cd,
+        part_1_2=part_1_2,
+        vict_sex=vict_sex,
+        vict_descent=vict_descent,
+        premis_cd=premis_cd,
+        weapon_used_cd=weapon_used_cd,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+@app.get("/crimes/{id}", tags=["Dataset"])  # ← sin response_model
+def get_crime_by_id_tara(id: int):
     if id <= 0:
         error_422("El ID debe ser un numero positivo")
- 
+
     crimen = get_crime_by_id(id)
- 
+
     if crimen is None:
         error_404(f"No se encontro ningun crimen con ID {id}")
- 
+
     return crimen
- 
  
 # ML
  
