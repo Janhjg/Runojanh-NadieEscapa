@@ -1,0 +1,1 @@
+- ml service terminar la parte de recopilacion de los datos introducidos por el usuario que se recibe como parametros de la funcion prepare features o como un diccionario?
