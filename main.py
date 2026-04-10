@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from datetime import datetime
+from typing import Optional
  
 from schemas import (
     CrimeListResponse, CrimeDetailResponse,
@@ -9,6 +10,7 @@ from schemas import (
     FullCaseNewInput, FullCaseOutput, FullCaseByIdOutput
 )
 from services import error_400, error_404, error_422, error_503, error_504
+from services import get_all_crimes, fetch_crime_by_id
 
 app = FastAPI(
     title="Runojanh - The Dark Chronicles",
@@ -59,29 +61,121 @@ def status():
     
 # Dataset
 
-@app.get("/crimes", response_model=CrimeListResponse, tags=["Dataset"])
-def get_crimes(limit: int = 20, offset: int = 0):
+# ── Dataset ───────────────────────────────────────────────────
+
+@app.get("/crimes", tags=["Dataset"])
+def crimes_list(
+    limit: int = 20,
+    offset: int = 0,
+    area: Optional[int] = None,
+    crm_cd: Optional[int] = None,
+    part_1_2: Optional[int] = None,
+    vict_sex: Optional[str] = None,
+    vict_descent: Optional[str] = None,
+    premis_cd: Optional[int] = None,
+    weapon_used_cd: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+):
     if limit <= 0 or offset < 0:
         error_422("limit debe ser mayor que 0 y offset no puede ser negativo")
  
- 
-@app.get("/crimes/{id}", response_model=CrimeDetailResponse, tags=["Dataset"])
-def get_crime_by_id(id: int):
+    return get_all_crimes(
+        limit=limit,
+        offset=offset,
+        area=area,
+        crm_cd=crm_cd,
+        part_1_2=part_1_2,
+        vict_sex=vict_sex,
+        vict_descent=vict_descent,
+        premis_cd=premis_cd,
+        weapon_used_cd=weapon_used_cd,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+@app.get("/crimes/{id}", tags=["Dataset"])  # ← sin response_model
+def get_crime_by_id_tara(id: int):
     if id <= 0:
         error_422("El ID debe ser un numero positivo")
- 
+
+    crimen = get_crime_by_id(id)
+
+    if crimen is None:
+        error_404(f"No se encontro ningun crimen con ID {id}")
+
+    return crimen
  
 # ML
  
+# ── ML ────────────────────────────────────────────────────────
+
 @app.post("/predict/new", response_model=PredictOutput, tags=["ML"])
 def predict_new(data: PredictNewInput):
-    pass
- 
- 
+    try:
+        resultado = predict(data.model_dump())
+        return resultado
+    except ValueError as e:
+        error_422(f"Valor no reconocido por el modelo: {str(e)}")
+    except FileNotFoundError:
+        error_503("El modelo ML no esta disponible. Ejecuta train.py primero")
+    except Exception as e:
+        error_503(f"El servicio de prediccion no esta disponible: {str(e)}")
+
+
 @app.get("/predict/{id}", response_model=PredictByIdResponse, tags=["ML"])
 def predict_by_id(id: int):
+
+    # ── Validacion del ID ─────────────────────────────────────
     if id <= 0:
         error_422("El ID debe ser un numero positivo")
+
+    # ── Buscar el crimen en el dataset ────────────────────────
+    crimen = get_crime_by_id(id)
+
+    if crimen is None:
+        error_404(f"No se encontro ningun crimen con ID {id}")
+
+    # ── Verificar que el caso sigue en investigacion ──────────
+    status = crimen.get("STATUS_DESC", "")
+
+    if status in ["Adult Arrest", "Juv Arrest"]:
+        error_400(f"El caso {id} ya fue resuelto con arresto. No requiere prediccion")
+
+    # ── Preparar los datos para el modelo ─────────────────────
+    try:
+        from datetime import datetime
+        fecha = datetime.strptime(crimen["DATE_OCC"], "%m/%d/%Y %I:%M:%S %p")
+        hora_str = str(crimen.get("TIME_OCC", "0000")).zfill(4)
+
+        datos_modelo = {
+            "AREA_NAME":     crimen.get("AREA_NAME"),
+            "CRM_CD_DESC":   crimen.get("CRM_CD_DESC"),
+            "CRM_CD_2_DESC": crimen.get("CRM_CD_2_DESC"),
+            "VICT_AGE":      crimen.get("VICT_AGE", 0),
+            "VICT_SEX":      crimen.get("VICT_SEX", "X"),
+            "PREMIS_DESC":   crimen.get("PREMIS_DESC"),
+            "WEAPON_DESC":   crimen.get("WEAPON_DESC"),
+            "PART_1_2":      crimen.get("PART_1_2", 2),
+            "hour":          int(hora_str[:2]),
+            "month":         fecha.month,
+            "day_of_week":   fecha.weekday(),
+        }
+
+        resultado = predict(datos_modelo)
+
+        return {
+            "id": id,
+            "datos_caso": crimen,
+            "prediccion": resultado
+        }
+
+    except ValueError as e:
+        error_422(f"Valor no reconocido por el modelo: {str(e)}")
+    except FileNotFoundError:
+        error_503("El modelo ML no esta disponible. Ejecuta train.py primero")
+    except Exception as e:
+        error_503(f"El servicio de prediccion no esta disponible: {str(e)}")
  
  
 # HuggingFace 

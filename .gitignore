@@ -209,3 +209,4 @@ data/
 models/
 Crime_Data_from_2020_to_Present.csv
 crime_data_model.pkl
+*.csv
