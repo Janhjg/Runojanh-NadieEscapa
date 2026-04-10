@@ -7,10 +7,62 @@ labels_escena_características = ["escena caótica", "escena limpia", "alta limp
 labels_contexto_clasificación = ["violento", "propiedad", "callejero", "barrio", "rural", "urbano", "organizado crime", "narcotráfico", "intrafamiliar", "extraño", "conocido", "víctima menor", "víctima vulnerable", "tragedia evitable", "por nada", "estupidez fatal", "sin alma", "frío como el hielo", "disfrute del sufrimiento", "coleccionista"]
 df=pd.read_csv("data\\crimeData_limpio.csv")
 
-def construir_clasificacion(datos, VObjetiva):
+def traductor_datosCrimen(datos :dict, VObjetiva):
+    #Traducciendo variables para hacer el texto mas legible.
     
+    #NIVEL
+    if datos["Part 1-2"]==1:
+        datos["Part 1-2"]="Muy Importante"
+    else:
+        datos["Part 1-2"]="Poco Importante"
+
+    #SEXO
+    if datos["Vict Sex"]=="F":
+        datos["Vict Sex"]="Femenino"
+    elif datos["Vict Sex"]=="M":
+        datos["Vict Sex"]="Masculino"
+    else:
+        datos["Vict Sex"]="Desconocido"
+
+    #DESCENDENCIA
+    diccionarioDescendencia={
+        "A": "Asiática",
+        "B": "negra",
+        "C": "China",
+        "D": "Camboyana",
+        "F": "Filipina",
+        "G": "Guameña",
+        "H": "Hispana / latinoamericana / mexicana",
+        "I": "Indígena americana / nativas de Alaska",
+        "J": "japonesa",
+        "K": "Coreana",
+        "O": "Otros",
+        "P": "De isla del Pacífico",
+        "S": "Samoana",
+        "U": "Hawaiano",
+        "V": "Vietnamita",
+        "W": "Persona blanca",
+        "X": "Desconocida",
+        "Z": "Asiático indio"
+    }
+    datos["Vict Descent"]=diccionarioDescendencia[datos["Vict Descent"]]
+
+    #Estado del caso
+    if VObjetiva=="Adult Arrest" or VObjetiva=="Juv Arrest":
+        datos["Status Desc"]="Arresto"
+    elif VObjetiva=="Adult Other" or VObjetiva=="Juv Other":
+        datos["Status Desc"]="No arresto"
+    else:
+        datos["Status Desc"]="Caso en Investigacion"
+    
+
+
+    return datos
+def construir_clasificacion(datos, VObjetiva):
+    datos=traductor_datosCrimen(datos, VObjetiva)
     texto=f'Ocurrido el crimen {datos["Crm Cd Desc"]} de nivel {datos["Part 1-2"]}, se ha usado el arma {datos["Weapon Desc"]} el dia {datos["DATE OCC"]}, a la hora {datos["TIME OCC"]}, en {datos["AREA NAME"]}, distrito:{datos["Rpt Dist No"]}, en un/a {datos["Premis Desc"]}.'
-    texto+=f'Informacion de la victima: edad= {datos["Vict Age"]}, sexo={datos["Vict Sex"]} descendencia={datos["Vict Descent"]}, finalmente el caso será resuelto con {VObjetiva}'
+    texto+=f'Informacion de la victima: edad= {datos["Vict Age"]}, sexo={datos["Vict Sex"]} descendencia={datos["Vict Descent"]}, finalmente el caso será resuelto con {datos["Status Desc"]}'
+    print(texto)
     resultadoLabel_genericas_basicas  :list= classifier(texto, candidate_labels=labels_genéricas_basicas , multi_label=True)["labels"]
     resultadoLabel_tipo_motivo_crimen :list= classifier(texto, candidate_labels=labels_tipo_motivo_crimen, multi_label=True)["labels"]
     resultadoLabel_escena_caracteristicas :list= classifier(texto, candidate_labels=labels_escena_características, multi_label=True)["labels"]
@@ -22,8 +74,9 @@ def construir_clasificacion(datos, VObjetiva):
         "labels_contexto_clasificacion":resultadoLabel_contexto_clasificacion[:3]
     }
     return resultado_final_labels_totales
+
 print(construir_clasificacion(df.iloc[350],df.iloc[350]["Status Desc"]))
-print(df.iloc[350])
+
 
 # Etiquetas genéricas básicas: sangriento, gore, frío, calculado, impulsivo, triste, sin sentido, sádico, enfermizo, pasional, vengativo, accidental, misterioso, ritual, serial, masacre, ejecución, narco, cartel, psicópata, organizado, desorganizado, caótico, limpio, sucio, sobre-ensañamiento
 
