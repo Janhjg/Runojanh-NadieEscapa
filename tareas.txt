@@ -1,1 +1,1 @@
-traducir datos resumidos de l dataset antes de pasarselos al textode clasificacion.
+modificar el 
