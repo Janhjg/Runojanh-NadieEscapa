@@ -62,16 +62,15 @@ def construir_clasificacion(datos, VObjetiva):
     datos=traductor_datosCrimen(datos, VObjetiva)
     texto=f'Ocurrido el crimen {datos["Crm Cd Desc"]} de nivel {datos["Part 1-2"]}, se ha usado el arma {datos["Weapon Desc"]} el dia {datos["DATE OCC"]}, a la hora {datos["TIME OCC"]}, en {datos["AREA NAME"]}, distrito:{datos["Rpt Dist No"]}, en un/a {datos["Premis Desc"]}.'
     texto+=f'Informacion de la victima: edad= {datos["Vict Age"]}, sexo={datos["Vict Sex"]} descendencia={datos["Vict Descent"]}, finalmente el caso será resuelto con {datos["Status Desc"]}'
-    print(texto)
     resultadoLabel_genericas_basicas  :list= classifier(texto, candidate_labels=labels_genéricas_basicas , multi_label=True)["labels"]
     resultadoLabel_tipo_motivo_crimen :list= classifier(texto, candidate_labels=labels_tipo_motivo_crimen, multi_label=True)["labels"]
     resultadoLabel_escena_caracteristicas :list= classifier(texto, candidate_labels=labels_escena_características, multi_label=True)["labels"]
     resultadoLabel_contexto_clasificacion :list= classifier(texto, candidate_labels=labels_contexto_clasificación, multi_label=True)["labels"]
     resultado_final_labels_totales={
-        "labels_genericas":resultadoLabel_genericas_basicas[:3],
-        "labels_motivo_crimen":resultadoLabel_tipo_motivo_crimen[:3],
+        "labels_genericas":resultadoLabel_genericas_basicas[:2],
+        "labels_motivo_crimen":resultadoLabel_tipo_motivo_crimen[:1],
         "labels_escena_caracteristicas":resultadoLabel_escena_caracteristicas[:3],
-        "labels_contexto_clasificacion":resultadoLabel_contexto_clasificacion[:3]
+        "labels_contexto_clasificacion":resultadoLabel_contexto_clasificacion[:2]
     }
     return resultado_final_labels_totales
 
@@ -85,3 +84,5 @@ print(construir_clasificacion(df.iloc[350],df.iloc[350]["Status Desc"]))
 # Etiquetas de escena / características forenses: escena caótica, escena limpia, alta limpieza, ocultamiento, fosa, maletero, cuerpo abandonado, sangre en paredes, huellas ensangrentadas, trofeos, grabaciones, tortura psicológica, tiro de gracia, manos atadas, vendados, bolsa en cabeza, cuchillo, arma de fuego, arma blanca, arma improvisada
 
 # Etiquetas de contexto / clasificación general: violento, propiedad, callejero, barrio, rural, urbano, organizado crime, narcotráfico, intrafamiliar, extraño, conocido, víctima menor, víctima vulnerable, tragedia evitable, por nada, estupidez fatal, sin alma, frío como el hielo, disfrute del sufrimiento, coleccionista
+if __name__=="__main__":
+   print(construir_clasificacion(df.iloc[6220],df.iloc[6220]["Status Desc"]))
