@@ -10,7 +10,15 @@ from schemas import (
     FullCaseNewInput, FullCaseOutput, FullCaseByIdOutput
 )
 from services import error_400, error_404, error_422, error_503, error_504
-from services import get_all_crimes, fetch_crime_by_id
+from services import (
+    get_all_crimes,
+    fetch_crime_by_id,
+    create_user_case,      # ← falta este
+    get_all_user_cases,
+    fetch_user_case_by_id,
+    delete_user_case
+)
+from services import predict
 
 app = FastAPI(
     title="Runojanh - The Dark Chronicles",
@@ -113,53 +121,55 @@ def get_crime_by_id_tara(id: int):
 @app.post("/predict/new", response_model=PredictOutput, tags=["ML"])
 def predict_new(data: PredictNewInput):
     try:
-        resultado = predict(data.model_dump())
+        datos = data.model_dump(by_alias=True)
+        print("DATOS QUE LLEGAN AL MODELO:", datos)  # ← añade esto
+        resultado = predict(datos)
+        create_user_case(datos)
         return resultado
     except ValueError as e:
         error_422(f"Valor no reconocido por el modelo: {str(e)}")
     except FileNotFoundError:
-        error_503("El modelo ML no esta disponible. Ejecuta train.py primero")
+        error_503("El modelo ML no esta disponible")
     except Exception as e:
-        error_503(f"El servicio de prediccion no esta disponible: {str(e)}")
-
+        error_503(f"Servicio de prediccion no disponible: {str(e)}")
 
 @app.get("/predict/{id}", response_model=PredictByIdResponse, tags=["ML"])
 def predict_by_id(id: int):
-
-    # ── Validacion del ID ─────────────────────────────────────
     if id <= 0:
         error_422("El ID debe ser un numero positivo")
 
-    # ── Buscar el crimen en el dataset ────────────────────────
-    crimen = get_crime_by_id(id)
+    crimen = fetch_crime_by_id(id)
 
     if crimen is None:
         error_404(f"No se encontro ningun crimen con ID {id}")
 
-    # ── Verificar que el caso sigue en investigacion ──────────
-    status = crimen.get("STATUS_DESC", "")
+    status = crimen.get("Status_Desc", "")
 
     if status in ["Adult Arrest", "Juv Arrest"]:
-        error_400(f"El caso {id} ya fue resuelto con arresto. No requiere prediccion")
+        error_400(f"El caso {id} ya fue resuelto con arresto")
 
-    # ── Preparar los datos para el modelo ─────────────────────
+    if status in ["Adult Other", "Juv Other"]:
+        error_400(f"El caso {id} ya fue cerrado sin arresto")
+
     try:
-        from datetime import datetime
-        fecha = datetime.strptime(crimen["DATE_OCC"], "%m/%d/%Y %I:%M:%S %p")
-        hora_str = str(crimen.get("TIME_OCC", "0000")).zfill(4)
-
+        # El crimen del dataset tiene columnas con _ por el rename
+        # Hay que devolverlas a los nombres originales con espacio
+        # que es lo que espera ml_service.prepare_features()
         datos_modelo = {
-            "AREA_NAME":     crimen.get("AREA_NAME"),
-            "CRM_CD_DESC":   crimen.get("CRM_CD_DESC"),
-            "CRM_CD_2_DESC": crimen.get("CRM_CD_2_DESC"),
-            "VICT_AGE":      crimen.get("VICT_AGE", 0),
-            "VICT_SEX":      crimen.get("VICT_SEX", "X"),
-            "PREMIS_DESC":   crimen.get("PREMIS_DESC"),
-            "WEAPON_DESC":   crimen.get("WEAPON_DESC"),
-            "PART_1_2":      crimen.get("PART_1_2", 2),
-            "hour":          int(hora_str[:2]),
-            "month":         fecha.month,
-            "day_of_week":   fecha.weekday(),
+            "DATE OCC":      crimen.get("DATE_OCC", ""),
+            "TIME OCC":      crimen.get("TIME_OCC", 0),
+            "AREA NAME":     crimen.get("AREA_NAME", ""),
+            "Rpt Dist No":   crimen.get("Rpt_Dist_No", 0),
+            "Part 1-2":      crimen.get("Part_1_2", 2),
+            "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", ""),
+            "Vict Age":      crimen.get("Vict_Age", 0),
+            "Vict Sex":      crimen.get("Vict_Sex", "X"),
+            "Vict Descent":  crimen.get("Vict_Descent", ""),
+            "Premis Desc":   crimen.get("Premis_Desc", ""),
+            "Weapon Desc":   crimen.get("Weapon_Desc", None),
+            "Crm Cd 2 Desc": None,
+            "Crm Cd 3 Desc": None,
+            "Crm Cd 4 Desc": None,
         }
 
         resultado = predict(datos_modelo)
@@ -173,10 +183,9 @@ def predict_by_id(id: int):
     except ValueError as e:
         error_422(f"Valor no reconocido por el modelo: {str(e)}")
     except FileNotFoundError:
-        error_503("El modelo ML no esta disponible. Ejecuta train.py primero")
+        error_503("El modelo ML no esta disponible")
     except Exception as e:
-        error_503(f"El servicio de prediccion no esta disponible: {str(e)}")
- 
+        error_503(f"Servicio de prediccion no disponible: {str(e)}")
  
 # HuggingFace 
  
