@@ -73,23 +73,26 @@ def prepare_features(data: dict) -> pd.DataFrame:
     else:
         Crm1Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc"]]["Crm Cd"].iloc[0])
 
-    #crimenes 2
-    if data["Crm Cd 2 Desc"]==None or data["Crm Cd 2 Desc"] not in mapper_crm["Crm Cd Desc"]:
-        Crm2Code=0
+    # Crimen 2
+    if data.get("Crm Cd 2 Desc") is None or data["Crm Cd 2 Desc"] not in mapper_crm["Crm Cd Desc"].values:
+        Crm2Code = 0
     else:
-        Crm2Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc 2"]]["Crm Cd"].iloc[0])
+        Crm2Code = int(mapper_crm[mapper_crm["Crm Cd Desc"] == data["Crm Cd 2 Desc"]]["Crm Cd"].iloc[0])
+        #                                                              ↑ corregido
 
-    #crimenes 3
-    if data["Crm Cd 3 Desc"]==None or data["Crm Cd 3 Desc"] not in mapper_crm["Crm Cd Desc"]:
-        Crm3Code=0
+    # Crimen 3
+    if data.get("Crm Cd 3 Desc") is None or data["Crm Cd 3 Desc"] not in mapper_crm["Crm Cd Desc"].values:
+        Crm3Code = 0
     else:
-        Crm3Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc 3"]]["Crm Cd"].iloc[0])
+        Crm3Code = int(mapper_crm[mapper_crm["Crm Cd Desc"] == data["Crm Cd 3 Desc"]]["Crm Cd"].iloc[0])
+        #                                                              ↑ corregido
 
-     #crimenes 4
-    if data["Crm Cd 4 Desc"]==None or data["Crm Cd 4 Desc"] not in mapper_crm["Crm Cd Desc"]:
-        Crm4Code=0
+    # Crimen 4
+    if data.get("Crm Cd 4 Desc") is None or data["Crm Cd 4 Desc"] not in mapper_crm["Crm Cd Desc"].values:
+        Crm4Code = 0
     else:
-        Crm4Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc 4"]]["Crm Cd"].iloc[0])
+        Crm4Code = int(mapper_crm[mapper_crm["Crm Cd Desc"] == data["Crm Cd 4 Desc"]]["Crm Cd"].iloc[0])
+        #                                                              ↑ corregido
 
     #Premis Cd
     if data["Premis Desc"]==None or data["Premis Desc"] not in mapper_premis["Premis Desc"]:
@@ -128,51 +131,21 @@ def prepare_features(data: dict) -> pd.DataFrame:
     return features
 
 
-def predict(data: dict):
-    """
-    Recibe los datos del crimen, prepara las features,
-    aplica el modelo y devuelve la prediccion con probabilidades.
-    """
-
+def predict(data: dict) -> dict:
     X = prepare_features(data)
+    
+    clase_idx = pipeline_model.predict(X)[0]
+    probs     = pipeline_model.predict_proba(X)[0]
 
-    # ── Prediccion ────────────────────────────────────────────
-    clase_idx   = pipeline_model.predict(X)
-    # probs       = model.predict_proba(X)[0]
+    prob_arrestado    = round(float(probs[1]), 4)
+    prob_no_arrestado = round(float(probs[0]), 4)
+    clase_predicha    = "arrestado" if clase_idx == 1 else "no arrestado"
+    confianza         = round(float(max(probs)), 4)
 
-    # prob_arrestado     = round(float(probs[1]), 4)
-    # prob_no_arrestado  = round(float(probs[0]), 4)
-    # clase_predicha     = "arrestado" if clase_idx == 1 else "no arrestado"
-    # confianza          = round(float(max(probs)), 4)
-
-    return clase_idx
-
-# {
-#         "clase_predicha":          clase_predicha,
-#         "probabilidad_arrestado":  prob_arrestado,
-#         "probabilidad_no_arrestado": prob_no_arrestado,
-#         "confianza":               confianza,
-#         "modelo":                  "RandomForestClassifier"
-#     }
-if __name__=="__main__":
-    df=pd.read_csv("data/crimeData_limpio.csv")
-    df=df[df["Status Desc"]=="Invest Cont"]
-    print(df["Status Desc"].value_counts())
-    numcaso=0
-    listErrores=list()
-    listpredicts=list()
-    for s in range(0, 5000,1):
-        datacaso = df.iloc[numcaso].to_dict()
-        sumando=random.choice([1,2,3,4,5,6,7,8,9,10])
-        numcaso+=sumando
-        
-        
-        try:
-            cadenaPrediccion =str(predict(datacaso))
-            listpredicts.append(cadenaPrediccion)
-
-        except Exception():
-            listErrores.append(numcaso)
-    seriePredicciones=pd.Series(listpredicts)
-    print(f"han habido {len(listErrores)} erroes y {seriePredicciones.value_counts().head()} \n longuitud de predicciones {len(listpredicts)}")
-        
+    return {
+        "clase_predicha":            clase_predicha,
+        "probabilidad_arrestado":    prob_arrestado,
+        "probabilidad_no_arrestado": prob_no_arrestado,
+        "confianza":                 confianza,
+        "modelo":                    "RandomForestClassifier"
+    }
