@@ -5,7 +5,7 @@ def traductor_datosCrimen(datos: dict, VObjetiva=None):
 
     # SEXO
     sexo_map = {"F": "Femenino", "M": "Masculino"}
-    datos["Vict Sex"] = sexo_map.get(datos["Vict Sex"], "Desconocido")
+    datos["Vict Sex"] = sexo_map.get(datos.get("Vict Sex"), "Desconocido")
 
     # DESCENDENCIA — ✅ .get() para no explotar con valores raros
     diccionarioDescendencia = {
@@ -16,7 +16,7 @@ def traductor_datosCrimen(datos: dict, VObjetiva=None):
         "U": "Hawaiana", "V": "Vietnamita", "W": "Blanca",
         "X": "Desconocida", "Z": "Asiático indio"
     }
-    datos["Vict Descent"] = diccionarioDescendencia.get(datos["Vict Descent"], "Desconocida")
+    datos["Vict Descent"] = diccionarioDescendencia.get(datos.get("Vict Descent"), "Desconocida")
 
     # ESTADO DEL CASO — ✅ ahora traduce aunque VObjetiva sea None
     if VObjetiva in ("Adult Arrest", "Juv Arrest", "arrestado"):

@@ -62,13 +62,13 @@ def prepare_features(data: dict) -> pd.DataFrame:
     
     #mapeando categoricas.
     #AREA
-    if data["AREA NAME"]==None or data["AREA NAME"] not in mapper_area["AREA NAME"]:
+    if data["AREA NAME"]==None or data["AREA NAME"] not in mapper_area["AREA NAME"].values:
         areaCode=0
     else:
         areaCode=int(mapper_area[mapper_area["AREA NAME"]==data["AREA NAME"]]["AREA"].iloc[0])
 
     #crimenes
-    if data["Crm Cd Desc"]==None or data["Crm Cd Desc"] not in mapper_crm["Crm Cd Desc"]:
+    if data["Crm Cd Desc"]==None or data["Crm Cd Desc"] not in mapper_crm["Crm Cd Desc"].values:
         Crm1Code=0
     else:
         Crm1Code=int(mapper_crm[mapper_crm["Crm Cd Desc"]==data["Crm Cd Desc"]]["Crm Cd"].iloc[0])
@@ -95,13 +95,13 @@ def prepare_features(data: dict) -> pd.DataFrame:
         #                                                              ↑ corregido
 
     #Premis Cd
-    if data["Premis Desc"]==None or data["Premis Desc"] not in mapper_premis["Premis Desc"]:
+    if data["Premis Desc"]==None or data["Premis Desc"] not in mapper_premis["Premis Desc"].values:
         premisCode=0
     else:
         premisCode=int(mapper_premis[mapper_premis["Premis Desc"]==data["Premis Desc"]]["Premis Cd"].iloc[0])
 
     #Weapon Used Cd
-    if data["Weapon Desc"]==None or data["Weapon Desc"] not in mapper_weapon["Weapon Desc"]:
+    if data["Weapon Desc"]==None or data["Weapon Desc"] not in mapper_weapon["Weapon Desc"].values:
         weaponCode=0
     else:
         weaponCode=int(mapper_weapon[mapper_weapon["Weapon Desc"]==data["Weapon Desc"]]["Weapon Used Cd"].iloc[0])

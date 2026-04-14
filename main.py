@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from typing import Optional
  
@@ -26,6 +26,14 @@ from services import construir_clasificacion
 app = FastAPI(
     title="Runojanh - The Dark Chronicles",
     description="API que transforma crimenes urbanos reales en narrativas de novela negra usando ML, HuggingFace y IA Generativa."
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
  
  
@@ -194,7 +202,7 @@ def predict_by_id(id: int):
 @app.post("/classify", response_model=ClassifyOutput, tags=["HuggingFace"])
 def classify(data: ClassifyInput):
     try:
-        datos_dict = data.datos_crimen.model_dump()  # ✅ el service ya hace el remap
+        datos_dict = data.datos_crimen.model_dump(by_alias=True)  # ✅ el service ya hace el remap
         resultado  = construir_clasificacion(datos_dict, VObjetiva=data.prediccion_ml.clase_predicha)
 
         return ClassifyOutput(
@@ -215,7 +223,7 @@ def classify(data: ClassifyInput):
 @app.post("/narrate", response_model=NarrateOutput, tags=["IA Generativa"])
 def narrate(data: NarrateInput):
     try:
-        datos_dict = data.datos_crimen.model_dump()
+        datos_dict = data.datos_crimen.model_dump(by_alias=True)
         pred_dict  = data.prediccion_ml.model_dump()
         
         cronica = generar_cronica(

@@ -17,52 +17,57 @@ labels_contexto_clasificación = ["violento", "propiedad", "callejero", "barrio"
 
 MODELO = "facebook/bart-large-mnli"
 
-# ✅ Remap snake_case (Pydantic) → nombres reales del CSV
-def _normalizar_claves(datos: dict) -> dict:
-    return {
-        "Part 1-2":    datos.get("Part_1_2"),
-        "Crm Cd Desc": datos.get("Crm_Cd_Desc"),
-        "Weapon Desc": datos.get("Weapon_Desc"),
-        "DATE OCC":    datos.get("DATE_OCC"),
-        "TIME OCC":    datos.get("TIME_OCC"),
-        "AREA NAME":   datos.get("AREA_NAME"),
-        "Rpt Dist No": datos.get("Rpt_Dist_No"),
-        "Premis Desc": datos.get("Premis_Desc"),
-        "Vict Age":    datos.get("Vict_Age"),
-        "Vict Sex":    datos.get("Vict_Sex"),
-        "Vict Descent":datos.get("Vict_Descent"),
-        "Status Desc": datos.get("Status_Desc"),
-    }
-
 def _extraer_top(resultado: dict, top_n: int) -> list[dict]:
     pares = zip(resultado["labels"], resultado["scores"])
     return [{"label": l, "score": round(s, 4)} for l, s in list(pares)[:top_n]]
 
-
 def construir_clasificacion(datos: dict, VObjetiva=None) -> dict:
-    # ✅ Normalizar antes de pasarle al traductor
-    datos = _normalizar_claves(datos)
-
+    """
+    Construye el contexto para HuggingFace y filtra etiquetas según los datos reales
+    para evitar alucinaciones (ej: no sugerir arma de fuego si fue un vehículo).
+    """
+    # 1. Preparación de datos
     if VObjetiva:
         datos = traductor_datosCrimen(datos, VObjetiva)
     else:
         datos = traductor_datosCrimen(datos)
 
+    weapon_desc = (datos.get("Weapon Desc") or "").upper()
+    
+    # 2. Guardias de Etiquetas (Filtro dinámico para evitar sesgos)
+    c_genericas = labels_genéricas_basicas.copy()
+    c_motivo    = labels_tipo_motivo_crimen.copy()
+    c_escena    = labels_escena_características.copy()
+
+    # Si NO es arma de fuego, eliminamos etiquetas relacionadas con disparos
+    firearm_keywords = ["GUN", "FIREARM", "PISTOL", "SHOT", "REVOLVER", "RIFLE"]
+    is_firearm = any(k in weapon_desc for k in firearm_keywords)
+    
+    if not is_firearm:
+        to_remove = ["disparo", "tiro de gracia", "arma de fuego"]
+        c_motivo = [l for l in c_motivo if l not in to_remove]
+        c_escena = [l for l in c_escena if l not in to_remove]
+    
+    # Si es VEHÍCULO, reforzamos etiquetas de accidente/tragedia si aplica
+    if "VEHICLE" in weapon_desc:
+        if "accidental" not in c_genericas: c_genericas.append("accidental")
+
+    # 3. Construcción del texto descriptivo
     texto = (
-        f'Ocurrido el crimen {datos["Crm Cd Desc"]} de nivel {datos["Part 1-2"]}, '
-        f'se ha usado el arma {datos["Weapon Desc"]} el dia {datos["DATE OCC"]}, '
-        f'a la hora {datos["TIME OCC"]}, en {datos["AREA NAME"]}, '
-        f'distrito:{datos["Rpt Dist No"]}, en un/a {datos["Premis Desc"]}. '
-        f'Informacion de la victima: edad={datos["Vict Age"]}, sexo={datos["Vict Sex"]}, '
-        f'descendencia={datos["Vict Descent"]}, '
-        f'finalmente el caso será resuelto con {datos["Status Desc"]}.'
+        f'Ocurrido el crimen {datos.get("Crm Cd Desc")} de nivel {datos.get("Part 1-2")}, '
+        f'se ha usado el arma {datos.get("Weapon Desc") or "Desconocida"} el dia {datos.get("DATE OCC")}, '
+        f'a la hora {datos.get("TIME OCC")}, en {datos.get("AREA NAME")}, '
+        f'distrito:{datos.get("Rpt Dist No")}, en un/a {datos.get("Premis Desc")}. '
+        f'Informacion de la victima: edad={datos.get("Vict Age")}, sexo={datos.get("Vict Sex")}, '
+        f'descendencia={datos.get("Vict Descent")}, '
+        f'finalmente el caso será resuelto con {datos.get("Status Desc")}.'
     )
 
     classifier_instance = get_classifier()
 
-    raw_genericas = classifier_instance(texto, candidate_labels=labels_genéricas_basicas,     multi_label=True)
-    raw_motivo    = classifier_instance(texto, candidate_labels=labels_tipo_motivo_crimen,     multi_label=True)
-    raw_escena    = classifier_instance(texto, candidate_labels=labels_escena_características, multi_label=True)
+    raw_genericas = classifier_instance(texto, candidate_labels=c_genericas, multi_label=True)
+    raw_motivo    = classifier_instance(texto, candidate_labels=c_motivo,    multi_label=True)
+    raw_escena    = classifier_instance(texto, candidate_labels=c_escena,    multi_label=True)
     raw_contexto  = classifier_instance(texto, candidate_labels=labels_contexto_clasificación, multi_label=True)
 
     todas_etiquetas = {
@@ -78,4 +83,4 @@ def construir_clasificacion(datos: dict, VObjetiva=None) -> dict:
         "texto_construido": texto,
         "todas_etiquetas":  todas_etiquetas,
         "modelo":           MODELO,
-    }
+    }
