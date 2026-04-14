@@ -1,10 +1,10 @@
 def traductor_datosCrimen(datos: dict, VObjetiva=None):
 
     # NIVEL
-    datos["Part 1-2"] = "Muy Importante" if datos["Part 1-2"] == 1 else "Poco Importante"
+    datos["Part 1-2"] = "Grave (Part 1)" if datos.get("Part 1-2") == 1 else "Leve (Part 2)"
 
     # SEXO
-    sexo_map = {"F": "Femenino", "M": "Masculino"}
+    sexo_map = {"F": "Femenina", "M": "Masculino", "X": "Desconocido"}
     datos["Vict Sex"] = sexo_map.get(datos.get("Vict Sex"), "Desconocido")
 
     # DESCENDENCIA — ✅ .get() para no explotar con valores raros
@@ -20,10 +20,10 @@ def traductor_datosCrimen(datos: dict, VObjetiva=None):
 
     # ESTADO DEL CASO — ✅ ahora traduce aunque VObjetiva sea None
     if VObjetiva in ("Adult Arrest", "Juv Arrest", "arrestado"):
-        datos["Status Desc"] = "Arresto"
+        datos["Status Desc"] = "Arresto Efectuado"
     elif VObjetiva in ("Adult Other", "Juv Other", "no arrestado"):
-        datos["Status Desc"] = "No arresto"
+        datos["Status Desc"] = "No hubo arresto (Otros motivos)"
     else:
-        datos["Status Desc"] = "Caso en Investigacion"
+        datos["Status Desc"] = "Caso actualmente en Investigación"
 
     return datos

@@ -21,7 +21,7 @@ export default function CaseForm({ onSubmit, isLoading }: CaseFormProps) {
     "Vict Descent": "H",
     "Premis Desc": "STREET",
     "Weapon Desc": ""
-  });
+  } as Record<string, any>);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -50,6 +50,13 @@ export default function CaseForm({ onSubmit, isLoading }: CaseFormProps) {
     'UNKNOWN FIREARM', 'OTHER KNIFE', 'MACE/PEPPER SPRAY', 'VEHICLE'
   ];
 
+  const areaOptions = [
+    'Central', 'Rampart', 'Southwest', 'Hollenbeck', 'Harbor',
+    'Hollywood', 'Wilshire', 'West LA', 'Van Nuys', 'West Valley',
+    'Northeast', 'Newton', '77th Street', 'Pacific', 'N Hollywood',
+    'Foothill', 'Devonshire', 'Southeast', 'Mission', 'Olympic', 'Topanga'
+  ];
+
   const descentOptions = [
     { code: "H", label: "Hispana/Latinoamericana" },
     { code: "B", label: "Negra" },
@@ -69,7 +76,7 @@ export default function CaseForm({ onSubmit, isLoading }: CaseFormProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
+        <div className="space-y-1 md:col-span-2">
           <label className="text-xs uppercase text-noir-muted">Fecha del Incidente</label>
           <input 
             type="text" 
@@ -81,27 +88,21 @@ export default function CaseForm({ onSubmit, isLoading }: CaseFormProps) {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs uppercase text-noir-muted">Hora (HHMM)</label>
-          <input 
-            type="number" 
-            name="TIME OCC" 
-            value={formData["TIME OCC"]} 
-            onChange={handleChange}
-            className="w-full bg-black border border-noir-border p-2 text-sm focus:border-noir-accent outline-none"
-          />
-        </div>
-        <div className="space-y-1">
           <label className="text-xs uppercase text-noir-muted">Área / Distrito</label>
           <input 
             type="text" 
             name="AREA NAME" 
+            list="areas-list"
             value={formData["AREA NAME"]} 
             onChange={handleChange}
             className="w-full bg-black border border-noir-border p-2 text-sm focus:border-noir-accent outline-none"
           />
+          <datalist id="areas-list">
+            {areaOptions.map(opt => <option key={opt} value={opt} />)}
+          </datalist>
         </div>
         <div className="space-y-1">
-          <label className="text-xs uppercase text-noir-muted">Descripción del Crimen</label>
+          <label className="text-xs uppercase text-noir-muted">Crimen Principal</label>
           <input 
             type="text" 
             name="Crm Cd Desc" 
@@ -110,10 +111,47 @@ export default function CaseForm({ onSubmit, isLoading }: CaseFormProps) {
             onChange={handleChange}
             className="w-full bg-black border border-noir-border p-2 text-sm focus:border-noir-accent outline-none"
           />
-          <datalist id="crimes-list">
-            {crimeOptions.map(opt => <option key={opt} value={opt} />)}
-          </datalist>
         </div>
+
+        {/* Crímenes Secundarios (Opcionales) */}
+        <div className="space-y-1">
+          <label className="text-xs uppercase text-noir-muted">Secundario 1 (Opcional)</label>
+          <input 
+            type="text" 
+            name="Crm Cd 2 Desc" 
+            list="crimes-list"
+            value={formData["Crm Cd 2 Desc"] || ""} 
+            onChange={handleChange}
+            className="w-full bg-black border border-noir-border p-2 text-sm focus:border-noir-accent outline-none border-dashed"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs uppercase text-noir-muted">Secundario 2 (Opcional)</label>
+          <input 
+            type="text" 
+            name="Crm Cd 3 Desc" 
+            list="crimes-list"
+            value={formData["Crm Cd 3 Desc"] || ""} 
+            onChange={handleChange}
+            className="w-full bg-black border border-noir-border p-2 text-sm focus:border-noir-accent outline-none border-dashed"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs uppercase text-noir-muted">Secundario 3 (Opcional)</label>
+          <input 
+            type="text" 
+            name="Crm Cd 4 Desc" 
+            list="crimes-list"
+            value={formData["Crm Cd 4 Desc"] || ""} 
+            onChange={handleChange}
+            className="w-full bg-black border border-noir-border p-2 text-sm focus:border-noir-accent outline-none border-dashed"
+          />
+        </div>
+
+        <datalist id="crimes-list">
+          {crimeOptions.map(opt => <option key={opt} value={opt} />)}
+        </datalist>
+
         <div className="space-y-1">
           <label className="text-xs uppercase text-noir-muted">Víctima (Edad / Sexo)</label>
           <div className="flex gap-2">

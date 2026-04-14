@@ -27,16 +27,27 @@ export default function Home() {
   };
 
   const handleFullProcess = async (formData: any) => {
-    setIsLoading('full');
     resetAll();
     setCurrentCrime(formData);
+    
     try {
-      const data = await submitFullCase(formData);
-      setPrediction(data.prediccion_ml);
-      setClassification(data.clasificacion_hf);
-      setChronicle(data.cronica);
+      // 1. Fase Predict (Instantánea)
+      setIsLoading('predict');
+      const predictData = await predictCrime(formData);
+      setPrediction(predictData);
+      
+      // 2. Fase Classify (Lenta - BART Large)
+      setIsLoading('classify');
+      const classifyData = await classifyCrime(formData, predictData);
+      setClassification(classifyData);
+      
+      // 3. Fase Narrate (Media - Ollama)
+      setIsLoading('narrate');
+      const narrateData = await narrateCrime(formData, predictData, classifyData.todas_etiquetas);
+      setChronicle(narrateData.cronica);
+      
     } catch (err: any) {
-      setError(err.message || 'Error en proceso completo');
+      setError(err.message || 'Error en la investigación');
     } finally {
       setIsLoading(null);
     }
@@ -172,10 +183,26 @@ export default function Home() {
               </motion.div>
             )}
 
-            {(isLoading === 'full' || isLoading === 'predict') && (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow noir-card flex flex-col items-center justify-center text-center py-24 space-y-6">
+            {(isLoading === 'predict' || isLoading === 'classify' || isLoading === 'narrate') && (
+              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow noir-card flex flex-col items-center justify-center text-center py-20 space-y-6">
                 <Activity size={48} className="animate-pulse text-noir-accent" />
-                <p className="text-sm uppercase tracking-widest font-bold">Procesando señales...</p>
+                <div className="space-y-2">
+                  <p className="text-sm uppercase tracking-widest font-bold">Investigación en Curso</p>
+                  <div className="flex flex-col gap-2 items-start text-[10px] uppercase tracking-tighter">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${isLoading === 'predict' ? 'bg-noir-accent animate-ping' : prediction ? 'bg-green-500' : 'bg-noir-muted'}`} />
+                      <span className={prediction ? 'text-green-500' : 'text-noir-muted'}>Paso 1: Análisis de Probabilidades (ML)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${isLoading === 'classify' ? 'bg-noir-accent animate-ping' : classification ? 'bg-green-500' : 'bg-noir-muted'}`} />
+                      <span className={classification ? 'text-green-500' : 'text-noir-muted'}>Paso 2: Perfilado del Escenario (BART)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${isLoading === 'narrate' ? 'bg-noir-accent animate-ping' : chronicle ? 'bg-green-500' : 'bg-noir-muted'}`} />
+                      <span className={chronicle ? 'text-green-500' : 'text-noir-muted'}>Paso 3: Generación de la Crónica (Ollama)</span>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 

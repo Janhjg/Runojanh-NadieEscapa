@@ -3,17 +3,32 @@ from .traductor_crimenes_service import traductor_datosCrimen
 _classifier = None
 
 def get_classifier():
-    """Lazy loader para el clasificador de Hugging Face."""
+    """Lazy loader para el clasificador de Hugging Face (BART-Large con Caché Local)."""
     global _classifier
     if _classifier is None:
         from transformers import pipeline
-        _classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+        import torch
+        import os
+        
+        # ── Configuración de Caché Local ─────────────────────────────
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        CACHE_DIR = os.path.join(BASE_DIR, "models", "hf_cache")
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        
+        # Auto-detección de GPU para máxima velocidad si está disponible
+        device = 0 if torch.cuda.is_available() else -1
+        
+        _classifier = pipeline("zero-shot-classification", 
+                               model="facebook/bart-large-mnli",
+                               device=device,
+                               model_kwargs={"cache_dir": CACHE_DIR})
     return _classifier
 
-labels_genéricas_basicas = ["sangriento", "gore", "frío", "calculado", "impulsivo", "triste", "sin sentido", "sádico", "enfermizo", "pasional", "vengativo", "accidental", "misterioso", "ritual", "serial", "masacre", "ejecución", "narco", "cartel", "psicópata", "organizado", "desorganizado", "caótico", "limpio", "sucio", "sobre-ensañamiento"]
-labels_tipo_motivo_crimen = ["homicidio", "homicidio múltiple", "familiar", "secuestro", "tortura", "asfixia", "apuñalamiento", "disparo", "estrangulamiento", "golpeamiento", "envenenamiento", "ahogamiento", "incendio", "robo con violencia", "agresión sexual", "doméstico", "pasional", "celos", "discusión", "drogas", "venganza", "accidente", "suicidio disfrazado", "ejecución profesional"]
-labels_escena_características = ["escena caótica", "escena limpia", "alta limpieza", "ocultamiento", "fosa", "maletero", "cuerpo abandonado", "sangre en paredes", "huellas ensangrentadas", "trofeos", "grabaciones", "tortura psicológica", "tiro de gracia", "manos atadas", "vendados", "bolsa en cabeza", "cuchillo", "arma de fuego", "arma blanca", "arma improvisada"]
-labels_contexto_clasificación = ["violento", "propiedad", "callejero", "barrio", "rural", "urbano", "organizado crime", "narcotráfico", "intrafamiliar", "extraño", "conocido", "víctima menor", "víctima vulnerable", "tragedia evitable", "por nada", "estupidez fatal", "sin alma", "frío como el hielo", "disfrute del sufrimiento", "coleccionista"]
+# Etiquetas optimizadas para reducir latencia
+labels_estilo_escena = ["sangriento", "frío", "calculado", "impulsivo", "triste", "misterioso", "ritual", "psicópata", "organizado", "caótico", "limpio", "sobre-ensañamiento"]
+labels_tematica_contexto = ["homicidio", "familiar", "secuestro", "tortura", "robo con violencia", "agresión sexual", "doméstico", "venganza", "accidente", "ejecución profesional", "narcotráfico", "intrafamiliar", "víctima menor"]
+labels_detalles_fisicos = ["escena limpia", "ocultamiento", "cuerpo abandonado", "huellas", "tiro de gracia", "manos atadas", "arma de fuego", "arma blanca", "arma improvisada"]
+labels_contexto_clasificacion = ["violento", "callejero", "urbano", "narcotráfico", "intrafamiliar", "extraño", "conocido", "víctima menor", "víctima vulnerable", "tragedia evitable", "sin alma", "frío como el hielo"]
 
 MODELO = "facebook/bart-large-mnli"
 
@@ -35,9 +50,10 @@ def construir_clasificacion(datos: dict, VObjetiva=None) -> dict:
     weapon_desc = (datos.get("Weapon Desc") or "").upper()
     
     # 2. Guardias de Etiquetas (Filtro dinámico para evitar sesgos)
-    c_genericas = labels_genéricas_basicas.copy()
-    c_motivo    = labels_tipo_motivo_crimen.copy()
-    c_escena    = labels_escena_características.copy()
+    c_estilo  = labels_estilo_escena.copy()
+    c_tematica = labels_tematica_contexto.copy()
+    c_fisicos  = labels_detalles_fisicos.copy()
+    c_contexto = labels_contexto_clasificacion.copy()
 
     # Si NO es arma de fuego, eliminamos etiquetas relacionadas con disparos
     firearm_keywords = ["GUN", "FIREARM", "PISTOL", "SHOT", "REVOLVER", "RIFLE"]
@@ -45,16 +61,23 @@ def construir_clasificacion(datos: dict, VObjetiva=None) -> dict:
     
     if not is_firearm:
         to_remove = ["disparo", "tiro de gracia", "arma de fuego"]
-        c_motivo = [l for l in c_motivo if l not in to_remove]
-        c_escena = [l for l in c_escena if l not in to_remove]
+        c_tematica = [l for l in c_tematica if l not in to_remove]
+        c_fisicos  = [l for l in c_fisicos  if l not in to_remove]
     
-    # Si es VEHÍCULO, reforzamos etiquetas de accidente/tragedia si aplica
+    # Si es VEHÍCULO, reforzamos etiquetas de accidente
     if "VEHICLE" in weapon_desc:
-        if "accidental" not in c_genericas: c_genericas.append("accidental")
+        if "accidente" not in c_tematica: c_tematica.append("accidente")
 
-    # 3. Construcción del texto descriptivo
+    # 3. Construcción del texto descriptivo (Enriquecido con crímenes secundarios)
+    crimenes = [datos.get("Crm Cd Desc")]
+    for i in range(2, 5):
+        extra = datos.get(f"Crm Cd {i} Desc")
+        if extra: crimenes.append(extra)
+    
+    txt_crimenes = " y ".join([c for c in crimenes if c])
+
     texto = (
-        f'Ocurrido el crimen {datos.get("Crm Cd Desc")} de nivel {datos.get("Part 1-2")}, '
+        f'Ocurrido el crimen {txt_crimenes} de nivel {datos.get("Part 1-2")}, '
         f'se ha usado el arma {datos.get("Weapon Desc") or "Desconocida"} el dia {datos.get("DATE OCC")}, '
         f'a la hora {datos.get("TIME OCC")}, en {datos.get("AREA NAME")}, '
         f'distrito:{datos.get("Rpt Dist No")}, en un/a {datos.get("Premis Desc")}. '
@@ -65,16 +88,16 @@ def construir_clasificacion(datos: dict, VObjetiva=None) -> dict:
 
     classifier_instance = get_classifier()
 
-    raw_genericas = classifier_instance(texto, candidate_labels=c_genericas, multi_label=True)
-    raw_motivo    = classifier_instance(texto, candidate_labels=c_motivo,    multi_label=True)
-    raw_escena    = classifier_instance(texto, candidate_labels=c_escena,    multi_label=True)
-    raw_contexto  = classifier_instance(texto, candidate_labels=labels_contexto_clasificación, multi_label=True)
+    raw_estilo   = classifier_instance(texto, candidate_labels=c_estilo,   multi_label=True)
+    raw_tematica = classifier_instance(texto, candidate_labels=c_tematica, multi_label=True)
+    raw_fisicos  = classifier_instance(texto, candidate_labels=c_fisicos,  multi_label=True)
+    raw_contexto = classifier_instance(texto, candidate_labels=c_contexto, multi_label=True)
 
     todas_etiquetas = {
-        "labels_genericas":              _extraer_top(raw_genericas, 2),
-        "labels_motivo_crimen":          _extraer_top(raw_motivo,    1),
-        "labels_escena_caracteristicas": _extraer_top(raw_escena,    3),
-        "labels_contexto_clasificacion": _extraer_top(raw_contexto,  2),
+        "labels_genericas":              _extraer_top(raw_estilo,   2),
+        "labels_motivo_crimen":          _extraer_top(raw_tematica, 1),
+        "labels_escena_caracteristicas": _extraer_top(raw_fisicos,  3),
+        "labels_contexto_clasificacion": _extraer_top(raw_contexto, 2),
     }
 
     return {
