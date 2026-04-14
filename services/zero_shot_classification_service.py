@@ -10,8 +10,11 @@ labels_contexto_clasificación = ["violento", "propiedad", "callejero", "barrio"
 df=pd.read_csv("data\\crimeData_limpio.csv")
 
 
-def construir_clasificacion(datos, VObjetiva):
-    datos=traductor_datosCrimen(datos, VObjetiva)
+def construir_clasificacion(datos, VObjetiva=None):
+    if VObjetiva:
+        datos=traductor_datosCrimen(datos, VObjetiva)
+    else:datos=traductor_datosCrimen(datos)
+
     texto=f'Ocurrido el crimen {datos["Crm Cd Desc"]} de nivel {datos["Part 1-2"]}, se ha usado el arma {datos["Weapon Desc"]} el dia {datos["DATE OCC"]}, a la hora {datos["TIME OCC"]}, en {datos["AREA NAME"]}, distrito:{datos["Rpt Dist No"]}, en un/a {datos["Premis Desc"]}.'
     texto+=f'Informacion de la victima: edad= {datos["Vict Age"]}, sexo={datos["Vict Sex"]} descendencia={datos["Vict Descent"]}, finalmente el caso será resuelto con {datos["Status Desc"]}'
     resultadoLabel_genericas_basicas  :list= classifier(texto, candidate_labels=labels_genéricas_basicas , multi_label=True)["labels"]
