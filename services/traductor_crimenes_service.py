@@ -1,50 +1,29 @@
-def traductor_datosCrimen(datos :dict, VObjetiva=None):
-    #Traducciendo variables para hacer el texto mas legible.
-    
-    #NIVEL
-    if datos["Part 1-2"]==1:
-        datos["Part 1-2"]="Muy Importante"
-    else:
-        datos["Part 1-2"]="Poco Importante"
+def traductor_datosCrimen(datos: dict, VObjetiva=None):
 
-    #SEXO
-    if datos["Vict Sex"]=="F":
-        datos["Vict Sex"]="Femenino"
-    elif datos["Vict Sex"]=="M":
-        datos["Vict Sex"]="Masculino"
-    else:
-        datos["Vict Sex"]="Desconocido"
+    # NIVEL
+    datos["Part 1-2"] = "Muy Importante" if datos["Part 1-2"] == 1 else "Poco Importante"
 
-    #DESCENDENCIA
-    diccionarioDescendencia={
-        "A": "Asiática",
-        "B": "negra",
-        "C": "China",
-        "D": "Camboyana",
-        "F": "Filipina",
-        "G": "Guameña",
-        "H": "Hispana / latinoamericana / mexicana",
-        "I": "Indígena americana / nativas de Alaska",
-        "J": "japonesa",
-        "K": "Coreana",
-        "O": "Otros",
-        "P": "De isla del Pacífico",
-        "S": "Samoana",
-        "U": "Hawaiano",
-        "V": "Vietnamita",
-        "W": "Persona blanca",
-        "X": "Desconocida",
-        "Z": "Asiático indio"
+    # SEXO
+    sexo_map = {"F": "Femenino", "M": "Masculino"}
+    datos["Vict Sex"] = sexo_map.get(datos["Vict Sex"], "Desconocido")
+
+    # DESCENDENCIA — ✅ .get() para no explotar con valores raros
+    diccionarioDescendencia = {
+        "A": "Asiática", "B": "Negra", "C": "China", "D": "Camboyana",
+        "F": "Filipina", "G": "Guameña", "H": "Hispana/Latinoamericana",
+        "I": "Indígena americana", "J": "Japonesa", "K": "Coreana",
+        "O": "Otros", "P": "Isleña del Pacífico", "S": "Samoana",
+        "U": "Hawaiana", "V": "Vietnamita", "W": "Blanca",
+        "X": "Desconocida", "Z": "Asiático indio"
     }
-    datos["Vict Descent"]=diccionarioDescendencia[datos["Vict Descent"]]
+    datos["Vict Descent"] = diccionarioDescendencia.get(datos["Vict Descent"], "Desconocida")
 
-    #Estado del caso
-    if VObjetiva:
-        if VObjetiva=="Adult Arrest" or VObjetiva=="Juv Arrest":
-            datos["Status Desc"]="Arresto"
-        elif VObjetiva=="Adult Other" or VObjetiva=="Juv Other":
-            datos["Status Desc"]="No arresto"
-        else:
-            datos["Status Desc"]="Caso en Investigacion"
-    
+    # ESTADO DEL CASO — ✅ ahora traduce aunque VObjetiva sea None
+    if VObjetiva in ("Adult Arrest", "Juv Arrest", "arrestado"):
+        datos["Status Desc"] = "Arresto"
+    elif VObjetiva in ("Adult Other", "Juv Other", "no arrestado"):
+        datos["Status Desc"] = "No arresto"
+    else:
+        datos["Status Desc"] = "Caso en Investigacion"
+
     return datos

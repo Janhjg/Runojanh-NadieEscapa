@@ -17,7 +17,7 @@ class FullCaseOutput(BaseModel):
         default={
             "ml": "RandomForestClassifier (scikit-learn)",
             "huggingface": "facebook/bart-large-mnli (zero-shot-classification)",
-            "ia_generativa": "gemini-2.0-flash (Google)"
+            "ia_generativa": "gemma4:e2b (Ollama)"
         },
         description="Tecnologias usadas en la generacion"
     )
@@ -33,7 +33,7 @@ class FullCaseByIdOutput(BaseModel):
         default={
             "ml": "RandomForestClassifier (scikit-learn)",
             "huggingface": "facebook/bart-large-mnli (zero-shot-classification)",
-            "ia_generativa": "gemini-2.0-flash (Google)"
+            "ia_generativa": "gemma4:e2b (Ollama)"
         },
         description="Tecnologias usadas en la generacion"
     )

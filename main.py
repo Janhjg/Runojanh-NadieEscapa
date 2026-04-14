@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
 from datetime import datetime
 from typing import Optional
  
@@ -16,9 +17,11 @@ from services import (
     create_user_case,      # ← falta este
     get_all_user_cases,
     fetch_user_case_by_id,
-    delete_user_case
+    delete_user_case,
+    generar_cronica
 )
 from services import predict
+from services import construir_clasificacion
 
 app = FastAPI(
     title="Runojanh - The Dark Chronicles",
@@ -102,12 +105,12 @@ def crimes_list(
         date_to=date_to,
     )
 
-@app.get("/crimes/{id}", tags=["Dataset"])  # ← sin response_model
-def get_crime_by_id_tara(id: int):
+@app.get("/crimes/{id}", tags=["Dataset"])
+def get_crime_by_id(id: int):
     if id <= 0:
         error_422("El ID debe ser un numero positivo")
 
-    crimen = get_crime_by_id(id)
+    crimen = fetch_crime_by_id(id)
 
     if crimen is None:
         error_404(f"No se encontro ningun crimen con ID {id}")
@@ -188,28 +191,127 @@ def predict_by_id(id: int):
         error_503(f"Servicio de prediccion no disponible: {str(e)}")
  
 # HuggingFace 
- 
 @app.post("/classify", response_model=ClassifyOutput, tags=["HuggingFace"])
 def classify(data: ClassifyInput):
-    pass
- 
+    try:
+        datos_dict = data.datos_crimen.model_dump()  # ✅ el service ya hace el remap
+        resultado  = construir_clasificacion(datos_dict, VObjetiva=data.prediccion_ml.clase_predicha)
+
+        return ClassifyOutput(
+            etiqueta         = resultado["etiqueta"],
+            confianza        = resultado["confianza"],
+            texto_construido = resultado["texto_construido"],
+            todas_etiquetas  = resultado["todas_etiquetas"],
+            modelo           = resultado["modelo"],
+        )
+
+    except KeyError as e:
+        raise HTTPException(status_code=422, detail=f"Campo faltante en datos del crimen: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en clasificación HuggingFace: {str(e)}")
  
 # IA Generativa
  
 @app.post("/narrate", response_model=NarrateOutput, tags=["IA Generativa"])
 def narrate(data: NarrateInput):
-    pass
+    try:
+        datos_dict = data.datos_crimen.model_dump()
+        pred_dict  = data.prediccion_ml.model_dump()
+        
+        cronica = generar_cronica(
+            datos_crimen = datos_dict,
+            prediccion   = pred_dict,
+            etiquetas    = data.etiquetas_huggingface
+        )
+
+        return NarrateOutput(
+            cronica              = cronica,
+            palabras             = len(cronica.split()),
+            etiquetas_usadas     = data.etiquetas_huggingface,
+            clase_predicha_usada = data.prediccion_ml.clase_predicha,
+            modelo               = "gemma4:e2b (Ollama)"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en generación narrativa: {str(e)}")
  
  
 # Full Case
  
 @app.post("/full-case/new", response_model=FullCaseOutput, tags=["Full Case"])
 def full_case_new(data: FullCaseNewInput):
-    pass
- 
- 
+    try:
+        # 1. ML Prediction
+        datos_dict = data.datos_crimen.model_dump(by_alias=True)
+        prediccion = predict(datos_dict)
+        
+        # 2. HuggingFace Classification
+        clasificacion = construir_clasificacion(datos_dict, VObjetiva=prediccion["clase_predicha"])
+        
+        # 3. Generative Narrative (Ollama)
+        cronica = generar_cronica(
+            datos_crimen = datos_dict,
+            prediccion   = prediccion,
+            etiquetas    = clasificacion["todas_etiquetas"]
+        )
+        
+        return FullCaseOutput(
+            datos_caso       = data.datos_crimen,
+            prediccion_ml    = prediccion,
+            clasificacion_hf = clasificacion,
+            cronica          = cronica
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en proceso Full Case: {str(e)}")
+
+
 @app.get("/full-case/{id}", response_model=FullCaseByIdOutput, tags=["Full Case"])
 def full_case_by_id(id: int):
     if id <= 0:
         error_422("El ID debe ser un numero positivo")
+
+    crimen = fetch_crime_by_id(id)
+    if crimen is None:
+        error_404(f"No se encontro ningun crimen con ID {id}")
+
+    try:
+        # Normalización de datos para los servicios
+        datos_modelo = {
+            "DATE OCC":      crimen.get("DATE_OCC", ""),
+            "TIME OCC":      crimen.get("TIME_OCC", 0),
+            "AREA NAME":     crimen.get("AREA_NAME", ""),
+            "Rpt Dist No":   crimen.get("Rpt_Dist_No", 0),
+            "Part 1-2":      crimen.get("Part_1_2", 2),
+            "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", ""),
+            "Vict Age":      crimen.get("Vict_Age", 0),
+            "Vict Sex":      crimen.get("Vict_Sex", "X"),
+            "Vict Descent":  crimen.get("Vict_Descent", ""),
+            "Premis Desc":   crimen.get("Premis_Desc", ""),
+            "Weapon Desc":   crimen.get("Weapon_Desc", None),
+            "Crm Cd 2 Desc": None,
+            "Crm Cd 3 Desc": None,
+            "Crm Cd 4 Desc": None,
+        }
+
+        # 1. ML Prediction
+        prediccion = predict(datos_modelo)
+        
+        # 2. HuggingFace Classification
+        clasificacion = construir_clasificacion(datos_modelo, VObjetiva=prediccion["clase_predicha"])
+        
+        # 3. Generative Narrative (Ollama)
+        cronica = generar_cronica(
+            datos_crimen = datos_modelo,
+            prediccion   = prediccion,
+            etiquetas    = clasificacion["todas_etiquetas"]
+        )
+
+        return FullCaseByIdOutput(
+            id               = id,
+            datos_caso       = crimen,
+            prediccion_ml    = prediccion,
+            clasificacion_hf = clasificacion,
+            cronica          = cronica
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en proceso Full Case por ID: {str(e)}")
  
