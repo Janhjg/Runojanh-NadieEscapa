@@ -1,18 +1,33 @@
 import os
 import sys
+from traductor_crimenes_service import traductor_datosCrimen
 from ollama import chat
 from ollama import ChatResponse
 
 
 
-script="Actúa como un novelista experto en género noir y hardboiled. Quiero desarrollar una historia basada en el siguiente caso criminal te pasaré algunos datos en ingles, traducelo: 'Description of Crime:THEFT OF IDENTITY, Nivel:2, Weapon:UNKNOWN WEAPON/OTHER WEAPON , el dia 07/22/2020 12:00:00 AM, a la hora 1200, en Wilshire, distrito:775, in a MULTI-UNIT DWELLING (APARTMENT, DUPLEX, ETC). Información de la victima: edad= 35, sexo=Femenino descendencia=negra, Estado del Caso: en Investigacion'. Para el tono de la narrativa, quiero que las emociones predominantes sean: 'labels_genericas': ['calculado', 'organizado', 'desorganizado'], 'labels_motivo_crimen': ['robo con violencia', 'familiar', 'disparo'], 'labels_escena_caracteristicas': ['arma improvisada', 'maletero', 'arma de fuego'], 'labels_contexto_clasificacion': ['violento', 'conocido', 'víctima vulnerable'] Por favor, genera, un relato breve: El Gancho: Un inicio potente con una voz narrativa en primera persona, cargada de cinismo y descripciones sensoriales. Atmósfera: Describe el entorno (la ciudad, el clima, la iluminación) usando las etiquetas sentimentales como filtro."
-def generar_historia(data) -> str:
-    response: ChatResponse = chat(model='gemma4:e2b', messages=[
-  {
-    'role': 'user',
-    'content': script,
-  },
-])
+def generar_historia(data, etiquetas_dict, Vobjetiva=None) -> str:
+    # tipo de ETIQUETAS y cuantas contiene
+    # labels_genericas, 2
+    # labels_motivo_crimen, 1
+    # labels_escena_caracteristicas, 3
+    # labels_contexto_clasificacion, 2
+    # ejemplo ["nombre etiqueta"][0] o [:2](para que devuelva las dos)
+
+    if Vobjetiva:
+      # para casos nuevos
+      data=traductor_datosCrimen(data, Vobjetiva)
+    else: data=traductor_datosCrimen(data)
+    
+    prompt=""
+    
+    # gemma4:e2b
+    response: ChatResponse = chat(model='', messages=[
+    {
+      'role': 'user',
+      'content': prompt,
+    },
+  ])
 
     return response.message.content
 
