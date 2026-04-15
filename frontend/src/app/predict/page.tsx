@@ -40,7 +40,7 @@ function PredictContent() {
             <Brain size={28} className="text-blue-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
+            <h1 className="glitch-text-frequent text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Módulo Predictivo ML
             </h1>
             <p className="text-sm text-blue-400 uppercase tracking-widest mt-1">Motor CatBoost · Riesgo de Arresto</p>

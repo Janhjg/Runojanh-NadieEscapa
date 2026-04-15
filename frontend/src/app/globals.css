@@ -124,7 +124,7 @@ body::before {
 .accent-narrate  { --mod-color: #3d2600; --mod-text: #d97706; }
 .accent-full     { --mod-color: #0d2615; --mod-text: #34d399; }
 
-/* ── Glitch keyframe (splash) ────────────────────────────────── */
+/* ── Glitch keyframe ────────────────────────────────── */
 @keyframes glitch-shift {
   0%, 100% { clip-path: inset(0 0 95% 0); transform: translate(-2px, 0); }
   25%       { clip-path: inset(40% 0 40% 0); transform: translate(2px, 0); }
@@ -132,12 +132,48 @@ body::before {
   75%       { clip-path: inset(20% 0 65% 0); transform: translate(1px, 0); }
 }
 
+/* Glitch agresivo que dispara ráfaga cada ~4s */
 @keyframes text-glitch {
-  0% { text-shadow: 2px 0 var(--color-noir-blood), -2px 0 blue; }
-  5% { text-shadow: none; filter: blur(0); }
-  10% { filter: blur(1px); }
-  15% { filter: blur(0); text-shadow: -1px 0 var(--color-noir-accent), 1px 0 blue; }
-  20%, 100% { text-shadow: none; filter: none; }
+  0%, 88%, 100% {
+    text-shadow: none;
+    transform: translate(0, 0);
+    filter: none;
+  }
+  89% {
+    text-shadow: -4px 0 #cc0000, 4px 0 #001fcc;
+    transform: translate(3px, -2px);
+    filter: brightness(1.4);
+  }
+  90% {
+    text-shadow: 4px 0 #cc0000, -4px 0 #001fcc;
+    transform: translate(-3px, 2px);
+    clip-path: inset(30% 0 50% 0);
+  }
+  91% {
+    text-shadow: -2px 0 #990000, 2px 0 #000099;
+    transform: translate(0, 0);
+    clip-path: inset(0);
+    filter: blur(0.5px);
+  }
+  92% {
+    text-shadow: 5px 0 #cc000099, -5px 0 #0000cc99;
+    transform: translate(-4px, 1px);
+    clip-path: inset(60% 0 20% 0);
+    filter: none;
+  }
+  93%, 94% {
+    text-shadow: none;
+    transform: translate(2px, 0);
+    clip-path: inset(0);
+  }
+  95% {
+    text-shadow: -3px 0 #cc0000aa, 3px 0 #0000ccaa;
+    transform: translate(-2px, -1px);
+  }
+  97% {
+    text-shadow: none;
+    transform: translate(0, 0);
+  }
 }
 
 .glitch-layer {
@@ -146,12 +182,15 @@ body::before {
 
 .glitch-text-frequent {
   position: relative;
-  animation: text-glitch 4s ease-in-out infinite;
+  animation: text-glitch 4s steps(1) infinite;
 }
 
 .glitch-hover:hover {
-  animation: text-glitch 0.3s ease-in-out infinite;
+  animation: text-glitch 0.4s steps(1) infinite;
 }
+
+
+
 
 /* ── Police tape line ───────────────────────────────────────── */
 .tape-line {

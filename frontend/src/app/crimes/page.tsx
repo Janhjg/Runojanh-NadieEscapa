@@ -91,7 +91,7 @@ export default function CrimesPage() {
         <div className="flex items-center gap-4">
           <Database size={40} className="text-gray-400" />
           <div>
-            <h1 className="text-3xl md:text-4xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
+            <h1 className="glitch-text-frequent text-3xl md:text-4xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Archivo Policial
             </h1>
             <p className="text-sm text-noir-muted uppercase tracking-widest">{total.toLocaleString()} Expedientes</p>

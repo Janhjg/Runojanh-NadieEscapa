@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Database, Brain, Tag, BookOpen, Archive, Shield, Home } from 'lucide-react';
-import AudioManager from './AudioManager';
 
 export default function NavBar() {
   const pathname = usePathname();
@@ -86,8 +85,6 @@ export default function NavBar() {
           </div>
         </div>
       </nav>
-      {/* Mini-panel musical */}
-      <AudioManager />
     </>
   );
 }

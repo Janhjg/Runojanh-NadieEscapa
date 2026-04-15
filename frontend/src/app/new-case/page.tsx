@@ -57,7 +57,7 @@ export default function NewCasePage() {
             <PlusCircle size={28} className="text-red-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
+            <h1 className="glitch-text-frequent text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Nuevo Caso
             </h1>
             <p className="text-sm text-red-500 uppercase tracking-widest mt-1">Creación de Expediente e Investigación Neural</p>

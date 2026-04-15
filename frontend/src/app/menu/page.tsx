@@ -59,12 +59,19 @@ export default function MenuPage() {
   return (
     <main className="container mx-auto px-4 py-12 flex-grow max-w-7xl">
       <header className="mb-16 text-center space-y-4">
-        <h1 className="text-5xl font-black tracking-tighter uppercase relative inline-block text-white" style={{ fontFamily: 'var(--font-noir)', textShadow: '0 0 30px rgba(255,255,255,0.2)' }}>
+        <h1
+          className="glitch-text-frequent text-5xl font-black tracking-tighter uppercase relative inline-block"
+          style={{
+            fontFamily: 'var(--font-noir)',
+            color: '#d4d4d4',
+          }}
+        >
           Centro de Operaciones
           <div className="absolute -bottom-4 left-1/2 w-32 h-1 bg-red-800 transform -translate-x-1/2"></div>
         </h1>
         <p className="text-sm uppercase tracking-widest text-gray-500 pt-6">Selecciona un módulo de instigación</p>
       </header>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {menuItems.map((item, i) => (

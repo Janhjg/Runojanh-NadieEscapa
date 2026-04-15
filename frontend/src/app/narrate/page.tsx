@@ -39,7 +39,7 @@ function NarrateContent() {
             <BookOpen size={28} className="text-amber-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
+            <h1 className="glitch-text-frequent text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Crónica de Novela Negra
             </h1>
             <p className="text-sm text-amber-500 uppercase tracking-widest mt-1">Motor Llama / Ollama · Generación Narrativa</p>

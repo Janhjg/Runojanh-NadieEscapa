@@ -51,7 +51,7 @@ function FullCaseContent() {
             <Archive size={28} className="text-green-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
+            <h1 className="glitch-text-frequent text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Análisis Full Case
             </h1>
             <p className="text-sm text-green-500 uppercase tracking-widest mt-1">Integración Total: Predicción + Clasificación + Narrativa</p>

@@ -45,7 +45,7 @@ function ClassifyContent() {
             <Tag size={28} className="text-purple-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
+            <h1 className="glitch-text-frequent text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Perfil Criminal NLP
             </h1>
             <p className="text-sm text-purple-400 uppercase tracking-widest mt-1">Motor BART-Large · Zero-Shot Híbrido</p>

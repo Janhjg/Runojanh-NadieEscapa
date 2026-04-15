@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Special_Elite } from "next/font/google";
 import "./globals.css";
-import AudioManager from "@/components/AudioManager";
 import SoundManager from "@/components/SoundManager";
 import NavBar from "@/components/NavBar";
+import PageTransition from "@/components/PageTransition";
+import AudioManager from "@/components/AudioManager";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,11 +33,12 @@ export default function RootLayout({
       className={`${inter.variable} ${specialElite.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-noir-bg text-noir-fore flex flex-col relative">
-        <AudioManager />
         <SoundManager />
         <NavBar />
-        {children}
+        <AudioManager />
+        <PageTransition>{children}</PageTransition>
       </body>
     </html>
   );
 }
+
