@@ -8,13 +8,13 @@ class ClassifyInput(BaseModel):
  
  
 class EtiquetaScore(BaseModel):
-    label: str = Field(..., description="Etiqueta narrativa sentimental", example="robo desesperado")
-    score: float = Field(..., description="Score de confianza", example=0.61)
+    label: str = Field(..., description="Etiqueta narrativa sentimental", json_schema_extra="robo desesperado")
+    score: float = Field(..., description="Score de confianza", json_schema_extra=0.61)
  
  
 class ClassifyOutput(BaseModel):
-    etiqueta: str = Field(..., description="Etiqueta narrativa ganadora", example="robo desesperado")
-    confianza: float = Field(..., description="Confianza de la etiqueta ganadora", example=0.61)
+    etiqueta: str = Field(..., description="Etiqueta narrativa ganadora", json_schema_extra="robo desesperado")
+    confianza: float = Field(..., description="Confianza de la etiqueta ganadora", json_schema_extra=0.61)
     texto_construido: str = Field(..., description="Texto enviado al modelo HuggingFace")
     todas_etiquetas: list[EtiquetaScore] = Field(..., description="Lista completa de etiquetas ordenadas por score")
-    modelo: str = Field(..., description="Modelo HuggingFace usado", example="facebook/bart-large-mnli")
+    modelo: str = Field(..., description="Modelo HuggingFace usado", json_schema_extra="facebook/bart-large-mnli")

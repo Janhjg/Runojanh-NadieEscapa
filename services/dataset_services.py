@@ -182,3 +182,14 @@ def delete_user_case(user_case_id: int) -> bool:
     original   = len(user_cases)
     user_cases = [c for c in user_cases if c["user_case_id"] != user_case_id]
     return len(user_cases) < original
+
+# ══════════════════════════════════════════════════════════════
+# ALIAS PARA COMPATIBILIDAD CON MAIN Y TESTS
+# ══════════════════════════════════════════════════════════════
+
+def get_crimes(*args, **kwargs):
+    return get_all_crimes(*args, **kwargs)
+
+
+def get_crime_by_id(id: int):
+    return fetch_crime_by_id(id)

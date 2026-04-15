@@ -24,7 +24,7 @@ class FullCaseOutput(BaseModel):
  
  
 class FullCaseByIdOutput(BaseModel):
-    id: int = Field(..., description="ID del crimen en el dataset", example=220109275)
+    id: int = Field(..., description="ID del crimen en el dataset", json_schema_extra=220109275)
     datos_caso: CrimeBase = Field(..., description="Datos completos del crimen del dataset")
     prediccion_ml: PredictOutput = Field(..., description="Resultado del modelo ML")
     clasificacion_hf: ClassifyOutput = Field(..., description="Resultado del modelo HuggingFace")
