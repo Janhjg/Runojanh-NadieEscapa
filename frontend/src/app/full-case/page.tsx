@@ -91,7 +91,7 @@ function FullCaseContent() {
           <Archive size={64} className="text-green-500 animate-pulse" />
           <div className="flex flex-col items-center gap-2">
             <p className="text-lg uppercase tracking-[0.3em] font-bold text-green-400">Reconstruyendo Expediente...</p>
-            <span className="text-sm text-green-700 animate-pulse font-mono tracking-widest">Iniciando CatBoost & BART-Large...</span>
+            <span className="text-sm text-green-700 animate-pulse font-mono tracking-widest">Iniciando RandomForest & BART-Large...</span>
           </div>
         </div>
       )}

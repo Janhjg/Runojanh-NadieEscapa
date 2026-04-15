@@ -2,10 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Database, Brain, Tag, BookOpen, Archive, Shield, Home } from 'lucide-react';
+import { Database, Brain, Tag, BookOpen, Archive, Shield, Home, AlertTriangle } from 'lucide-react';
 
 export default function NavBar() {
   const pathname = usePathname();
+
+  const playDangerSound = () => {
+    try {
+      const audio = new Audio('/audio/voz.mp3');
+      audio.volume = 0.9;
+      audio.play().catch(() => {});
+    } catch {}
+  };
 
   // Ocultar barra en la pantalla de inicio (splash)
   if (pathname === '/') return null;
@@ -78,9 +86,20 @@ export default function NavBar() {
               })}
             </div>
 
-            <div className="hidden md:flex items-center gap-3 border border-gray-800 bg-[#050505] px-4 py-1.5 rounded-sm">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-mono uppercase tracking-[0.2em] text-gray-400 font-bold">Lvl 4 Access</span>
+            <div className="hidden md:flex items-center gap-6">
+              <div className="flex items-center gap-3 border border-gray-800 bg-[#050505] px-4 py-1.5 rounded-sm">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-gray-400 font-bold">Lvl 4 Access</span>
+              </div>
+              
+              <button 
+                onClick={playDangerSound}
+                className="group relative flex items-center justify-center w-8 h-8 border border-red-900 bg-red-950/20 hover:bg-red-600 transition-all duration-300 animate-pulse hover:animate-none"
+                title="SISTEMA CRÍTICO - NO TOCAR"
+              >
+                <AlertTriangle size={16} className="text-red-600 group-hover:text-white" />
+                <div className="absolute inset-0 bg-red-600 opacity-0 group-hover:opacity-20 transition-opacity" />
+              </button>
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@ function PoliceBadge({ glitch }: { glitch: boolean }) {
   return (
     <svg
       viewBox="0 0 100 120"
-      className={`w-20 h-24 transition-all duration-75 ${glitch ? 'opacity-60 scale-[0.99]' : 'opacity-100'}`}
+      className={`w-32 h-40 transition-all duration-75 ${glitch ? 'opacity-60 scale-[0.99]' : 'opacity-100'}`}
       style={{ filter: glitch ? 'hue-rotate(15deg)' : 'none' }}
     >
       {/* Outer shield */}
@@ -86,8 +86,15 @@ export default function SplashPage() {
     setStarting(true);
     setShowStatic(true);
 
-    voiceRef.current = new Audio('/audio/narrador.mp3');
-    voiceRef.current.play().catch(() => {});
+    // Sonidos duales: Botón mecánico + Narrador atmosférico
+    const btnAudio = new Audio('/audio/boton.mp3');
+    const voiceAudio = new Audio('/audio/narrador.mp3');
+    btnAudio.volume = 0.8;
+    voiceAudio.volume = 0.9;
+    
+    btnAudio.play().catch(() => {});
+    voiceAudio.play().catch(() => {});
+    
     window.dispatchEvent(new CustomEvent('runojanh:start-music'));
 
     setTimeout(() => router.push('/menu'), 1400);
@@ -126,7 +133,7 @@ export default function SplashPage() {
       </AnimatePresence>
 
       {/* Content */}
-      <div className="relative z-20 flex flex-col items-center gap-7 px-4 text-center">
+      <div className="relative z-20 flex flex-col items-center gap-10 px-4 text-center">
 
         {/* Badge SVG */}
         <motion.div
@@ -136,7 +143,7 @@ export default function SplashPage() {
           className="relative"
         >
           <div
-            className="absolute inset-0 rounded-full blur-2xl opacity-30 scale-150"
+            className="absolute inset-0 rounded-full blur-3xl opacity-30 scale-150"
             style={{ background: 'radial-gradient(circle, #991b1b, transparent)' }}
           />
           <PoliceBadge glitch={glitch} />
@@ -144,7 +151,7 @@ export default function SplashPage() {
 
         {/* Title with glitch layer */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
           className="relative"
@@ -152,19 +159,19 @@ export default function SplashPage() {
           {/* Glitch clone behind */}
           {glitch && (
             <span
-              className="absolute inset-0 text-red-800 text-5xl md:text-7xl font-black uppercase tracking-[0.25em] leading-none select-none translate-x-1"
+              className="absolute inset-0 text-red-800 text-7xl md:text-9xl font-black uppercase tracking-[0.25em] leading-none select-none translate-x-1"
               style={{ fontFamily: 'var(--font-noir)', clipPath: 'inset(30% 0 50% 0)' }}
             >
               RUNOJANH
             </span>
           )}
           <h1
-            className={`text-5xl md:text-7xl font-black uppercase tracking-[0.25em] leading-none transition-colors duration-75 ${glitch ? 'text-red-600' : 'text-white'}`}
-            style={{ fontFamily: 'var(--font-noir)', textShadow: '0 0 40px rgba(153,27,27,0.3)' }}
+            className={`text-7xl md:text-9xl font-black uppercase tracking-[0.25em] leading-none transition-colors duration-75 ${glitch ? 'text-red-600' : 'text-white'}`}
+            style={{ fontFamily: 'var(--font-noir)', textShadow: '0 0 60px rgba(153,27,27,0.4)' }}
           >
             RUNOJANH
           </h1>
-          <p className="mt-2 text-[10px] md:text-xs uppercase tracking-[0.7em] text-red-900 font-bold font-mono">
+          <p className="mt-4 text-xs md:text-sm uppercase tracking-[0.8em] text-red-900 font-bold font-mono">
             ✦ Nadie Escapa ✦
           </p>
         </motion.div>
@@ -174,7 +181,7 @@ export default function SplashPage() {
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ delay: 1.0, duration: 0.7 }}
-          className="tape-line w-48"
+          className="tape-line w-64"
         />
 
         {/* Subtitle */}
@@ -182,7 +189,7 @@ export default function SplashPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.1, duration: 0.8 }}
-          className="text-[10px] uppercase tracking-[0.35em] text-noir-blood font-mono"
+          className="text-xs uppercase tracking-[0.4em] text-noir-blood font-mono"
         >
           División de Análisis Criminal · Los Ángeles
         </motion.p>
@@ -195,18 +202,18 @@ export default function SplashPage() {
           onClick={handleStart}
           disabled={starting}
           className="
-            group relative mt-2 px-10 py-3.5
+            group relative mt-4 px-14 py-5
             border border-red-900 text-red-800
-            text-[10px] uppercase tracking-[0.45em] font-bold font-mono
+            text-xs uppercase tracking-[0.5em] font-bold font-mono
             hover:bg-red-950/50 hover:border-red-700 hover:text-red-500
             transition-all duration-300 disabled:opacity-40
-            hover:shadow-[0_0_25px_rgba(153,27,27,0.35)]
+            hover:shadow-[0_0_35px_rgba(153,27,27,0.45)]
           "
         >
           {starting ? (
-            <span className="flex items-center gap-3">
-              <span className="inline-block w-2.5 h-2.5 border-t border-red-700 rounded-full animate-spin" />
-              Accediendo al Sistema...
+            <span className="flex items-center gap-4">
+              <span className="inline-block w-3 h-3 border-t border-red-700 rounded-full animate-spin" />
+              Accediendo...
             </span>
           ) : (
             <>

@@ -94,8 +94,10 @@ export default function AudioManager() {
   };
 
   useEffect(() => {
+    // Si es la primera vez o volvemos al sitio, forzamos el inicio de la música
+    // (A menos que el detective la haya detenido explícitamente antes en esta sesión)
     const wasStarted = sessionStorage.getItem(SESSION_KEY_ACTIVE) === 'true';
-    const wasPlaying = sessionStorage.getItem(SESSION_KEY_PLAYING) !== 'false'; // Default a true si ha empezado
+    const wasPlayingManual = sessionStorage.getItem(SESSION_KEY_PLAYING) !== 'false'; 
 
     const initMusic = () => {
       if (!startedRef.current) {
@@ -107,12 +109,9 @@ export default function AudioManager() {
       }
     };
 
-    // Si ya estaba activo de antes (refresh de página), restauramos
-    if (wasStarted && !startedRef.current) {
-      startedRef.current = true;
-      setPlaying(wasPlaying);
-      playingRef.current = wasPlaying;
-      startPlayback(0);
+    // Forzar el inicio al montar (apenas se abre el sitio)
+    if (!startedRef.current) {
+      initMusic();
     }
 
     window.addEventListener('runojanh:start-music', initMusic);

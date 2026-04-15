@@ -334,7 +334,7 @@ function CrimeCard({ crime, source, expanded, onToggle }: { crime: any, source: 
                       className="px-6 py-3 border border-blue-900 bg-blue-950/20 text-blue-400 text-sm uppercase font-black tracking-widest hover:bg-blue-900 hover:text-white transition-all flex items-center gap-2"
                       onClick={e => e.stopPropagation()}
                     >
-                      <Brain size={16} /> CatBoost ML
+                      <Brain size={16} /> RandomForest ML
                     </Link>
                     <Link 
                       href={`/classify?id=${id}`}

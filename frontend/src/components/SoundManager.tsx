@@ -16,7 +16,7 @@ import { useEffect, useRef } from 'react';
 function playOneShot(src: string) {
   try {
     const audio = new Audio(src);
-    audio.volume = 0.85;
+    audio.volume = 0.3; // Mucho más bajo para no distraer
     audio.play().catch(() => {});
   } catch {}
 }
@@ -24,17 +24,30 @@ function playOneShot(src: string) {
 export default function SoundManager() {
   const crowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Sonido de tecla en cada click ────────────────────────────
+  // ── Sonido de tecla en cada click y tecla presionada ────────────────────────────
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const isInteractive = target.closest('button, a, input[type="submit"], [role="button"]');
       if (isInteractive) {
-        playOneShot('/audio/tecla.mp3');
+        playOneShot('/audio/tecla2.mp3');
       }
     };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Solo sonar si el foco está en un input o textarea (simulando escritura)
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        playOneShot('/audio/tecla2.mp3');
+      }
+    };
+
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // ── Cuervo aleatorio ─────────────────────────────────────────

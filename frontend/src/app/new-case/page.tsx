@@ -148,7 +148,7 @@ export default function NewCasePage() {
 
               {activeTab === 'steps' && (isLoading || prediction || classification) ? (
                 <motion.div key="steps" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                  <LogEntry icon={Brain} label="Inferencia CatBoost (Arresto)" status={prediction ? 'done' : isLoading === 'predict' ? 'loading' : 'pending'} />
+                  <LogEntry icon={Brain} label="Inferencia RandomForest (Arresto)" status={prediction ? 'done' : isLoading === 'predict' ? 'loading' : 'pending'} />
                   <LogEntry icon={Tag} label="Clasificación BART-Large (Perfil)" status={classification ? 'done' : isLoading === 'classify' ? 'loading' : 'pending'} />
                   <LogEntry icon={BookOpen} label="Generación Narrativa (Ollama)" status={chronicle ? 'done' : isLoading === 'narrate' ? 'loading' : 'pending'} />
                 </motion.div>

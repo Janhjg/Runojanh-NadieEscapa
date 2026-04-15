@@ -15,7 +15,7 @@ const menuItems = [
   },
   {
     title: 'Predicción ML',
-    desc: 'Usa Machine Learning (CatBoost) para adivinar si hubo arresto.',
+    desc: 'Usa Machine Learning (RandomForest) para adivinar si hubo arresto.',
     icon: Brain,
     href: '/predict',
     color: 'text-blue-500',

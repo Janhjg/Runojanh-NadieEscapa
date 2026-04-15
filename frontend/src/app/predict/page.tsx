@@ -43,7 +43,7 @@ function PredictContent() {
             <h1 className="glitch-text-frequent text-3xl font-black uppercase tracking-widest text-white" style={{ fontFamily: 'var(--font-noir)' }}>
               Módulo Predictivo ML
             </h1>
-            <p className="text-sm text-blue-400 uppercase tracking-widest mt-1">Motor CatBoost · Riesgo de Arresto</p>
+            <p className="text-sm text-blue-400 uppercase tracking-widest mt-1">Motor RandomForest · Riesgo de Arresto</p>
           </div>
         </div>
       </header>
@@ -75,7 +75,7 @@ function PredictContent() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-6">
           <Activity size={64} className="animate-pulse text-blue-500" />
-          <p className="text-lg uppercase tracking-[0.3em] font-bold text-blue-300">Consultando CatBoost...</p>
+          <p className="text-lg uppercase tracking-[0.3em] font-bold text-blue-300">Consultando RandomForest...</p>
         </div>
       )}
 
