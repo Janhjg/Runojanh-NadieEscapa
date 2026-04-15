@@ -176,6 +176,12 @@ def fetch_user_case_by_id(user_case_id: int) -> dict | None:
             return case
     return None
 
+def update_user_case(user_case_id: int, updates: dict) -> bool:
+    for case in user_cases:
+        if case["user_case_id"] == user_case_id:
+            case.update(updates)
+            return True
+    return False
 
 def delete_user_case(user_case_id: int) -> bool:
     global user_cases

@@ -14,9 +14,10 @@ from services import error_400, error_404, error_422, error_503, error_504
 from services import (
     get_all_crimes,
     fetch_crime_by_id,
-    create_user_case,      # ← falta este
+    create_user_case,
     get_all_user_cases,
     fetch_user_case_by_id,
+    update_user_case,
     delete_user_case,
     generar_cronica
 )
@@ -113,6 +114,42 @@ def crimes_list(
         date_to=date_to,
     )
 
+@app.get("/crimes/meta", tags=["Dataset"])
+def crimes_meta():
+    """Devuelve los valores únicos disponibles para los filtros desplegables del explorador."""
+    from services.dataset_services import df
+    if df.empty:
+        return {}
+    
+    areas_raw = df[["AREA", "AREA_NAME"]].drop_duplicates().sort_values("AREA_NAME")
+    areas = [{"id": int(r["AREA"]), "name": str(r["AREA_NAME"])} for _, r in areas_raw.iterrows()]
+    
+    descents_map = {
+        "A": "Asiática", "B": "Negra", "C": "China", "D": "Camboyana",
+        "F": "Filipina", "G": "Guameña", "H": "Hispana/Latinoamericana",
+        "I": "Indígena americana", "J": "Japonesa", "K": "Coreana",
+        "O": "Otros", "P": "Isleña del Pacífico", "S": "Samoana",
+        "U": "Hawaiana", "V": "Vietnamita", "W": "Blanca",
+        "X": "Desconocida", "Z": "Asiático indio"
+    }
+    descents_raw = sorted(df["Vict_Descent"].dropna().unique().tolist())
+    descents = [{"code": c, "label": descents_map.get(c, c)} for c in descents_raw]
+    
+    return {
+        "areas": areas,
+        "descents": descents,
+    }
+
+@app.get("/user-cases", tags=["Dataset"])
+def user_cases_list(
+    limit: int = 20,
+    offset: int = 0,
+):
+    if limit <= 0 or offset < 0:
+        error_422("limit debe ser mayor que 0 y offset no puede ser negativo")
+    return get_all_user_cases(limit, offset)
+
+
 @app.get("/crimes/{id}", tags=["Dataset"])
 def get_crime_by_id(id: int):
     if id <= 0:
@@ -133,9 +170,9 @@ def get_crime_by_id(id: int):
 def predict_new(data: PredictNewInput):
     try:
         datos = data.model_dump(by_alias=True)
-        print("DATOS QUE LLEGAN AL MODELO:", datos)  # ← añade esto
         resultado = predict(datos)
-        create_user_case(datos)
+        nuevo_caso = create_user_case(datos)
+        update_user_case(nuevo_caso["user_case_id"], {"prediccion": resultado})
         return resultado
     except ValueError as e:
         error_422(f"Valor no reconocido por el modelo: {str(e)}")
@@ -150,40 +187,38 @@ def predict_by_id(id: int):
         error_422("El ID debe ser un numero positivo")
 
     crimen = fetch_crime_by_id(id)
+    if crimen is None:
+        crimen = fetch_user_case_by_id(id)
 
     if crimen is None:
-        error_404(f"No se encontro ningun crimen con ID {id}")
+        error_404(f"No se encontro ningun crimen ni caso de usuario con ID {id}")
 
-    status = crimen.get("Status_Desc", "")
-
-    if status in ["Adult Arrest", "Juv Arrest"]:
-        error_400(f"El caso {id} ya fue resuelto con arresto")
-
-    if status in ["Adult Other", "Juv Other"]:
-        error_400(f"El caso {id} ya fue cerrado sin arresto")
-
+    # Permítelo aunque esté cerrado: queremos predecir retrospectivamente
     try:
         # El crimen del dataset tiene columnas con _ por el rename
-        # Hay que devolverlas a los nombres originales con espacio
-        # que es lo que espera ml_service.prepare_features()
+        # Casos de usuario las tienen con espacios por Pydantic
         datos_modelo = {
-            "DATE OCC":      crimen.get("DATE_OCC", ""),
-            "TIME OCC":      crimen.get("TIME_OCC", 0),
-            "AREA NAME":     crimen.get("AREA_NAME", ""),
-            "Rpt Dist No":   crimen.get("Rpt_Dist_No", 0),
-            "Part 1-2":      crimen.get("Part_1_2", 2),
-            "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", ""),
-            "Vict Age":      crimen.get("Vict_Age", 0),
-            "Vict Sex":      crimen.get("Vict_Sex", "X"),
-            "Vict Descent":  crimen.get("Vict_Descent", ""),
-            "Premis Desc":   crimen.get("Premis_Desc", ""),
-            "Weapon Desc":   crimen.get("Weapon_Desc", None),
-            "Crm Cd 2 Desc": None,
-            "Crm Cd 3 Desc": None,
-            "Crm Cd 4 Desc": None,
+            "DATE OCC":      crimen.get("DATE_OCC", crimen.get("DATE OCC", "")),
+            "TIME OCC":      crimen.get("TIME_OCC", crimen.get("TIME OCC", 0)),
+            "AREA NAME":     crimen.get("AREA_NAME", crimen.get("AREA NAME", "")),
+            "Rpt Dist No":   crimen.get("Rpt_Dist_No", crimen.get("Rpt Dist No", 0)),
+            "Part 1-2":      crimen.get("Part_1_2", crimen.get("Part 1-2", 2)),
+            "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", crimen.get("Crm Cd Desc", "")),
+            "Vict Age":      crimen.get("Vict_Age", crimen.get("Vict Age", 0)),
+            "Vict Sex":      crimen.get("Vict_Sex", crimen.get("Vict Sex", "X")),
+            "Vict Descent":  crimen.get("Vict_Descent", crimen.get("Vict Descent", "X")),
+            "Premis Desc":   crimen.get("Premis_Desc", crimen.get("Premis Desc", "")),
+            "Weapon Desc":   crimen.get("Weapon_Desc", crimen.get("Weapon Desc", None)),
+            "Crm Cd 2 Desc": crimen.get("Crm_Cd_2_Desc", crimen.get("Crm Cd 2 Desc", None)),
+            "Crm Cd 3 Desc": crimen.get("Crm_Cd_3_Desc", crimen.get("Crm Cd 3 Desc", None)),
+            "Crm Cd 4 Desc": crimen.get("Crm_Cd_4_Desc", crimen.get("Crm Cd 4 Desc", None)),
         }
 
         resultado = predict(datos_modelo)
+        
+        # Guardar si es caso de usuario
+        if not fetch_crime_by_id(id):  
+            update_user_case(id, {"prediccion": resultado})
 
         return {
             "id": id,
@@ -217,6 +252,56 @@ def classify(data: ClassifyInput):
         raise HTTPException(status_code=422, detail=f"Campo faltante en datos del crimen: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en clasificación HuggingFace: {str(e)}")
+
+@app.get("/classify/{id}", tags=["HuggingFace"])
+def classify_by_id(id: int):
+    crimen_db = fetch_crime_by_id(id)
+    if not crimen_db:
+        crimen_db = fetch_user_case_by_id(id)
+    if not crimen_db:
+        raise HTTPException(status_code=404, detail=f"Caso {id} no encontrado")
+    
+    # Normalización de datos para los servicios
+    datos_modelo = {
+        "DATE OCC":      crimen_db.get("DATE_OCC", crimen_db.get("DATE OCC", "")),
+        "TIME OCC":      crimen_db.get("TIME_OCC", crimen_db.get("TIME OCC", 0)),
+        "AREA NAME":     crimen_db.get("AREA_NAME", crimen_db.get("AREA NAME", "")),
+        "Rpt Dist No":   crimen_db.get("Rpt_Dist_No", crimen_db.get("Rpt Dist No", 0)),
+        "Part 1-2":      crimen_db.get("Part_1_2", crimen_db.get("Part 1-2", 2)),
+        "Crm Cd Desc":   crimen_db.get("Crm_Cd_Desc", crimen_db.get("Crm Cd Desc", "")),
+        "Vict Age":      crimen_db.get("Vict_Age", crimen_db.get("Vict Age", 0)),
+        "Vict Sex":      crimen_db.get("Vict_Sex", crimen_db.get("Vict Sex", "X")),
+        "Vict Descent":  crimen_db.get("Vict_Descent", crimen_db.get("Vict Descent", "X")),
+        "Premis Desc":   crimen_db.get("Premis_Desc", crimen_db.get("Premis Desc", "")),
+        "Weapon Desc":   crimen_db.get("Weapon_Desc", crimen_db.get("Weapon Desc", None)),
+        "Crm Cd 2 Desc": crimen_db.get("Crm_Cd_2_Desc", crimen_db.get("Crm Cd 2 Desc", None)),
+        "Crm Cd 3 Desc": crimen_db.get("Crm_Cd_3_Desc", crimen_db.get("Crm Cd 3 Desc", None)),
+        "Crm Cd 4 Desc": crimen_db.get("Crm_Cd_4_Desc", crimen_db.get("Crm Cd 4 Desc", None)),
+    }
+    try:
+        pred_res = predict(datos_modelo)
+    except Exception as e:
+        pred_res = {"clase_predicha": "desconocido", "confianza": 0}
+        
+    try:
+        clasificacion = construir_clasificacion(datos_modelo, VObjetiva=pred_res.get("clase_predicha"))
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    clasificacion_obj = {
+        "clasificacion_hf": clasificacion,
+        "texto_construido": clasificacion["texto_construido"],
+        "todas_etiquetas": clasificacion["todas_etiquetas"]
+    }
+
+    if not fetch_crime_by_id(id):
+        update_user_case(id, {"clasificacion": clasificacion_obj})
+
+    return {
+        "registro_id": id,
+        **clasificacion_obj
+    }
  
 # IA Generativa
  
@@ -241,6 +326,46 @@ def narrate(data: NarrateInput):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en generación narrativa: {str(e)}")
+
+@app.get("/narrate/{id}", tags=["IA Generativa"])
+def narrate_by_id(id: int):
+    crimen_db = fetch_crime_by_id(id)
+    if not crimen_db:
+        crimen_db = fetch_user_case_by_id(id)
+    if not crimen_db:
+        raise HTTPException(status_code=404, detail=f"Caso {id} no encontrado")
+        
+    # Normalización de datos para los servicios
+    datos_modelo = {
+        "DATE OCC":      crimen_db.get("DATE_OCC", crimen_db.get("DATE OCC", "")),
+        "TIME OCC":      crimen_db.get("TIME_OCC", crimen_db.get("TIME OCC", 0)),
+        "AREA NAME":     crimen_db.get("AREA_NAME", crimen_db.get("AREA NAME", "")),
+        "Rpt Dist No":   crimen_db.get("Rpt_Dist_No", crimen_db.get("Rpt Dist No", 0)),
+        "Part 1-2":      crimen_db.get("Part_1_2", crimen_db.get("Part 1-2", 2)),
+        "Crm Cd Desc":   crimen_db.get("Crm_Cd_Desc", crimen_db.get("Crm Cd Desc", "")),
+        "Vict Age":      crimen_db.get("Vict_Age", crimen_db.get("Vict Age", 0)),
+        "Vict Sex":      crimen_db.get("Vict_Sex", crimen_db.get("Vict Sex", "X")),
+        "Vict Descent":  crimen_db.get("Vict_Descent", crimen_db.get("Vict Descent", "X")),
+        "Premis Desc":   crimen_db.get("Premis_Desc", crimen_db.get("Premis Desc", "")),
+        "Weapon Desc":   crimen_db.get("Weapon_Desc", crimen_db.get("Weapon Desc", None)),
+        "Crm Cd 2 Desc": crimen_db.get("Crm_Cd_2_Desc", crimen_db.get("Crm Cd 2 Desc", None)),
+        "Crm Cd 3 Desc": crimen_db.get("Crm_Cd_3_Desc", crimen_db.get("Crm Cd 3 Desc", None)),
+        "Crm Cd 4 Desc": crimen_db.get("Crm_Cd_4_Desc", crimen_db.get("Crm Cd 4 Desc", None)),
+    }
+    try:
+        pred_res = predict(datos_modelo)
+        clasificacion = construir_clasificacion(datos_modelo, VObjetiva=pred_res.get("clase_predicha"))
+        cronica = generar_cronica(datos_modelo, pred_res, clasificacion["todas_etiquetas"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    if not fetch_crime_by_id(id):
+        update_user_case(id, {"cronica": cronica})
+        
+    return {
+        "registro_id": id,
+        "cronica": cronica
+    }
  
  
 # Full Case
@@ -262,6 +387,18 @@ def full_case_new(data: FullCaseNewInput):
             etiquetas    = clasificacion["todas_etiquetas"]
         )
         
+        # Guardar todo en memoria
+        nuevo_caso = create_user_case(datos_dict)
+        update_user_case(nuevo_caso["user_case_id"], {
+            "prediccion": prediccion,
+            "clasificacion": {
+                "clasificacion_hf": clasificacion,
+                "texto_construido": clasificacion["texto_construido"],
+                "todas_etiquetas": clasificacion["todas_etiquetas"]
+            },
+            "cronica": cronica
+        })
+        
         return FullCaseOutput(
             datos_caso       = data.datos_crimen,
             prediccion_ml    = prediccion,
@@ -279,25 +416,27 @@ def full_case_by_id(id: int):
 
     crimen = fetch_crime_by_id(id)
     if crimen is None:
-        error_404(f"No se encontro ningun crimen con ID {id}")
+        crimen = fetch_user_case_by_id(id)
+    if crimen is None:
+        error_404(f"No se encontro ningun crimen ni caso de usuario con ID {id}")
 
     try:
         # Normalización de datos para los servicios
         datos_modelo = {
-            "DATE OCC":      crimen.get("DATE_OCC", ""),
-            "TIME OCC":      crimen.get("TIME_OCC", 0),
-            "AREA NAME":     crimen.get("AREA_NAME", ""),
-            "Rpt Dist No":   crimen.get("Rpt_Dist_No", 0),
-            "Part 1-2":      crimen.get("Part_1_2", 2),
-            "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", ""),
-            "Vict Age":      crimen.get("Vict_Age", 0),
-            "Vict Sex":      crimen.get("Vict_Sex", "X"),
-            "Vict Descent":  crimen.get("Vict_Descent", ""),
-            "Premis Desc":   crimen.get("Premis_Desc", ""),
-            "Weapon Desc":   crimen.get("Weapon_Desc", None),
-            "Crm Cd 2 Desc": None,
-            "Crm Cd 3 Desc": None,
-            "Crm Cd 4 Desc": None,
+            "DATE OCC":      crimen.get("DATE_OCC", crimen.get("DATE OCC", "")),
+            "TIME OCC":      crimen.get("TIME_OCC", crimen.get("TIME OCC", 0)),
+            "AREA NAME":     crimen.get("AREA_NAME", crimen.get("AREA NAME", "")),
+            "Rpt Dist No":   crimen.get("Rpt_Dist_No", crimen.get("Rpt Dist No", 0)),
+            "Part 1-2":      crimen.get("Part_1_2", crimen.get("Part 1-2", 2)),
+            "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", crimen.get("Crm Cd Desc", "")),
+            "Vict Age":      crimen.get("Vict_Age", crimen.get("Vict Age", 0)),
+            "Vict Sex":      crimen.get("Vict_Sex", crimen.get("Vict Sex", "X")),
+            "Vict Descent":  crimen.get("Vict_Descent", crimen.get("Vict Descent", "X")),
+            "Premis Desc":   crimen.get("Premis_Desc", crimen.get("Premis Desc", "")),
+            "Weapon Desc":   crimen.get("Weapon_Desc", crimen.get("Weapon Desc", None)),
+            "Crm Cd 2 Desc": crimen.get("Crm_Cd_2_Desc", crimen.get("Crm Cd 2 Desc", None)),
+            "Crm Cd 3 Desc": crimen.get("Crm_Cd_3_Desc", crimen.get("Crm Cd 3 Desc", None)),
+            "Crm Cd 4 Desc": crimen.get("Crm_Cd_4_Desc", crimen.get("Crm Cd 4 Desc", None)),
         }
 
         # 1. ML Prediction
@@ -312,6 +451,17 @@ def full_case_by_id(id: int):
             prediccion   = prediccion,
             etiquetas    = clasificacion["todas_etiquetas"]
         )
+
+        if not fetch_crime_by_id(id):
+             update_user_case(id, {
+                 "prediccion": prediccion,
+                 "clasificacion": {
+                     "clasificacion_hf": clasificacion,
+                     "texto_construido": clasificacion["texto_construido"],
+                     "todas_etiquetas": clasificacion["todas_etiquetas"]
+                 },
+                 "cronica": cronica
+             })
 
         return FullCaseByIdOutput(
             id               = id,

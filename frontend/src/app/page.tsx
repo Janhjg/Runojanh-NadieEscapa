@@ -1,236 +1,236 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Skull, AlertTriangle, ChevronRight, Activity, Tag, BookOpen } from 'lucide-react';
-import CaseForm from '@/components/CaseForm';
-import ResultsDashboard from '@/components/ResultsDashboard';
-import TypewriterChronicle from '@/components/TypewriterChronicle';
-import { submitFullCase, predictCrime, classifyCrime, narrateCrime } from '@/services/api';
 
-export default function Home() {
-  const [isLoading, setIsLoading] = useState<string | null>(null); // 'full', 'predict', 'classify', 'narrate'
-  const [error, setError] = useState<string | null>(null);
-  
-  // States for partial results
-  const [currentCrime, setCurrentCrime] = useState<any>(null);
-  const [prediction, setPrediction] = useState<any>(null);
-  const [classification, setClassification] = useState<any>(null);
-  const [chronicle, setChronicle] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'full' | 'steps'>('full');
+// SVG Badge policial — más dramático que el emoji
+function PoliceBadge({ glitch }: { glitch: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 100 120"
+      className={`w-20 h-24 transition-all duration-75 ${glitch ? 'opacity-60 scale-[0.99]' : 'opacity-100'}`}
+      style={{ filter: glitch ? 'hue-rotate(15deg)' : 'none' }}
+    >
+      {/* Outer shield */}
+      <path
+        d="M50 4 L90 20 L90 65 Q90 100 50 116 Q10 100 10 65 L10 20 Z"
+        fill="none"
+        stroke="#7f1d1d"
+        strokeWidth="1.5"
+        className="drop-shadow-lg"
+      />
+      {/* Inner shield */}
+      <path
+        d="M50 12 L82 26 L82 63 Q82 92 50 106 Q18 92 18 63 L18 26 Z"
+        fill="none"
+        stroke="#991b1b"
+        strokeWidth="0.8"
+        opacity="0.6"
+      />
+      {/* Star center */}
+      <g transform="translate(50,58)" fill="none" stroke="#991b1b" strokeWidth="0.8">
+        {[0,60,120,180,240,300].map((angle, i) => (
+          <line
+            key={i}
+            x1="0" y1="0"
+            x2={Math.sin((angle * Math.PI) / 180) * 14}
+            y2={-Math.cos((angle * Math.PI) / 180) * 14}
+          />
+        ))}
+        <circle r="5" fill="#7f1d1d" strokeWidth="0" />
+        <circle r="3" fill="#991b1b" strokeWidth="0" />
+      </g>
+      {/* Text: LAPD */}
+      <text x="50" y="40" textAnchor="middle" fontSize="7" fontFamily="monospace" fill="#6b0000" letterSpacing="3" fontWeight="bold">
+        L·A·P·D
+      </text>
+      {/* Text: DETECTIVE */}
+      <text x="50" y="78" textAnchor="middle" fontSize="4.5" fontFamily="monospace" fill="#4a0000" letterSpacing="2">
+        DETECTIVE
+      </text>
+      {/* Badge number */}
+      <text x="50" y="90" textAnchor="middle" fontSize="5.5" fontFamily="monospace" fill="#7f1d1d" letterSpacing="1">
+        #221B
+      </text>
+      {/* Glow effect */}
+      <defs>
+        <radialGradient id="badgeGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#991b1b" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="50" cy="60" rx="45" ry="50" fill="url(#badgeGlow)" />
+    </svg>
+  );
+}
 
-  const resetAll = () => {
-    setPrediction(null);
-    setClassification(null);
-    setChronicle(null);
-    setError(null);
-  };
+export default function SplashPage() {
+  const router = useRouter();
+  const voiceRef = useRef<HTMLAudioElement | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [glitch, setGlitch] = useState(false);
+  const [showStatic, setShowStatic] = useState(false);
 
-  const handleFullProcess = async (formData: any) => {
-    resetAll();
-    setCurrentCrime(formData);
-    
-    try {
-      // 1. Fase Predict (Instantánea)
-      setIsLoading('predict');
-      const predictData = await predictCrime(formData);
-      setPrediction(predictData);
-      
-      // 2. Fase Classify (Lenta - BART Large)
-      setIsLoading('classify');
-      const classifyData = await classifyCrime(formData, predictData);
-      setClassification(classifyData);
-      
-      // 3. Fase Narrate (Media - Ollama)
-      setIsLoading('narrate');
-      const narrateData = await narrateCrime(formData, predictData, classifyData.todas_etiquetas);
-      setChronicle(narrateData.cronica);
-      
-    } catch (err: any) {
-      setError(err.message || 'Error en la investigación');
-    } finally {
-      setIsLoading(null);
-    }
-  };
+  // Glitch periódico
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGlitch(true);
+      setTimeout(() => setGlitch(false), 120);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handlePredict = async (formData: any) => {
-    setIsLoading('predict');
-    resetAll();
-    setCurrentCrime(formData);
-    try {
-      const data = await predictCrime(formData);
-      setPrediction(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(null);
-    }
-  };
+  const handleStart = () => {
+    if (starting) return;
+    setStarting(true);
+    setShowStatic(true);
 
-  const handleClassify = async () => {
-    if (!currentCrime || !prediction) return;
-    setIsLoading('classify');
-    try {
-      const data = await classifyCrime(currentCrime, prediction);
-      setClassification(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(null);
-    }
-  };
+    voiceRef.current = new Audio('/audio/narrador.mp3');
+    voiceRef.current.play().catch(() => {});
+    window.dispatchEvent(new CustomEvent('runojanh:start-music'));
 
-  const handleNarrate = async () => {
-    if (!currentCrime || !prediction || !classification) return;
-    setIsLoading('narrate');
-    try {
-      const data = await narrateCrime(currentCrime, prediction, classification.todas_etiquetas);
-      setChronicle(data.cronica);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(null);
-    }
+    setTimeout(() => router.push('/menu'), 1400);
   };
 
   return (
-    <main className="container mx-auto px-4 py-8 flex-grow max-w-6xl">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row items-center justify-between mb-12 border-b border-noir-border pb-6">
-        <div className="flex items-center gap-4 mb-4 md:mb-0">
-          <div className="bg-noir-accent p-3 rounded-full shadow-[0_0_15px_rgba(185,28,28,0.5)]">
-            <Skull className="text-white" size={32} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">
-              Runojanh <span className="text-noir-accent font-noir">Detective</span>
-            </h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-noir-muted">Crime Analysis Terminal v2.0</p>
-          </div>
-        </div>
-        
-        <div className="flex bg-black border border-noir-border p-1 rounded-sm">
-          <button 
-            onClick={() => setActiveTab('full')}
-            className={`px-4 py-1 text-[10px] uppercase font-bold transition-colors ${activeTab === 'full' ? 'bg-noir-accent text-white' : 'text-noir-muted hover:text-noir-fore'}`}
-          >
-            Proceso Automático
-          </button>
-          <button 
-            onClick={() => setActiveTab('steps')}
-            className={`px-4 py-1 text-[10px] uppercase font-bold transition-colors ${activeTab === 'steps' ? 'bg-noir-accent text-white' : 'text-noir-muted hover:text-noir-fore'}`}
-          >
-            Análisis Manual
-          </button>
-        </div>
-      </header>
+    <main
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden select-none"
+      style={{ background: '#000' }}
+    >
+      {/* Layers: scanlines */}
+      <div className="scanlines absolute inset-0 z-10 opacity-60" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Input Form */}
-        <div className="lg:col-span-4 space-y-6">
-          <CaseForm 
-            onSubmit={activeTab === 'full' ? handleFullProcess : handlePredict} 
-            isLoading={!!isLoading} 
+      {/* Radial bg */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 50%, #0d0000 0%, #000 75%)' }}
+      />
+
+      {/* Red spotlight ambient */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 50% 35% at 50% 48%, rgba(120,0,0,0.18) 0%, transparent 70%)' }}
+      />
+
+      {/* Static flash on start */}
+      <AnimatePresence>
+        {showStatic && (
+          <motion.div
+            initial={{ opacity: 0.8 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 z-30 bg-white mix-blend-overlay pointer-events-none"
           />
-          
-          <AnimatePresence>
-            {activeTab === 'steps' && prediction && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-4">
-                <button 
-                  onClick={handleClassify}
-                  disabled={!!isLoading || !!classification}
-                  className="w-full noir-card flex items-center justify-between hover:border-noir-accent transition-colors disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <Tag size={16} className={classification ? "text-green-500" : "text-noir-accent"} />
-                    <span className="text-xs uppercase font-bold">Clasificar con HuggingFace</span>
-                  </div>
-                  {isLoading === 'classify' && <Activity size={14} className="animate-pulse text-noir-accent" />}
-                  {classification && <span className="text-[10px] text-green-500 font-bold">OK</span>}
-                </button>
+        )}
+      </AnimatePresence>
 
-                <button 
-                  onClick={handleNarrate}
-                  disabled={!!isLoading || !classification || !!chronicle}
-                  className="w-full noir-card flex items-center justify-between hover:border-noir-accent transition-colors disabled:opacity-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <BookOpen size={16} className={chronicle ? "text-green-500" : "text-noir-accent"} />
-                    <span className="text-xs uppercase font-bold">Generar Crónica (Ollama)</span>
-                  </div>
-                  {isLoading === 'narrate' && <Activity size={14} className="animate-pulse text-noir-accent" />}
-                  {chronicle && <span className="text-[10px] text-green-500 font-bold">OK</span>}
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {error && (
-            <div className="bg-red-950/30 border border-red-900 p-4 text-red-500 text-xs flex items-start gap-3">
-              <AlertTriangle size={16} className="shrink-0" />
-              <p>{error}</p>
-            </div>
+      {/* Content */}
+      <div className="relative z-20 flex flex-col items-center gap-7 px-4 text-center">
+
+        {/* Badge SVG */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5, rotate: -5 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+          className="relative"
+        >
+          <div
+            className="absolute inset-0 rounded-full blur-2xl opacity-30 scale-150"
+            style={{ background: 'radial-gradient(circle, #991b1b, transparent)' }}
+          />
+          <PoliceBadge glitch={glitch} />
+        </motion.div>
+
+        {/* Title with glitch layer */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="relative"
+        >
+          {/* Glitch clone behind */}
+          {glitch && (
+            <span
+              className="absolute inset-0 text-red-800 text-5xl md:text-7xl font-black uppercase tracking-[0.25em] leading-none select-none translate-x-1"
+              style={{ fontFamily: 'var(--font-noir)', clipPath: 'inset(30% 0 50% 0)' }}
+            >
+              RUNOJANH
+            </span>
           )}
-        </div>
+          <h1
+            className={`text-5xl md:text-7xl font-black uppercase tracking-[0.25em] leading-none transition-colors duration-75 ${glitch ? 'text-red-600' : 'text-white'}`}
+            style={{ fontFamily: 'var(--font-noir)', textShadow: '0 0 40px rgba(153,27,27,0.3)' }}
+          >
+            RUNOJANH
+          </h1>
+          <p className="mt-2 text-[10px] md:text-xs uppercase tracking-[0.7em] text-red-900 font-bold font-mono">
+            ✦ Nadie Escapa ✦
+          </p>
+        </motion.div>
 
-        {/* Right Column: Results */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          <AnimatePresence mode="wait">
-            {!prediction && !isLoading && (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow noir-card flex flex-col items-center justify-center text-center py-24 opacity-30 border-dashed">
-                <ChevronRight size={48} className="mb-4" />
-                <p className="text-sm uppercase tracking-widest font-noir">Terminal lista para recibir datos</p>
-              </motion.div>
-            )}
+        {/* Tape line */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 1.0, duration: 0.7 }}
+          className="tape-line w-48"
+        />
 
-            {(isLoading === 'predict' || isLoading === 'classify' || isLoading === 'narrate') && (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-grow noir-card flex flex-col items-center justify-center text-center py-20 space-y-6">
-                <Activity size={48} className="animate-pulse text-noir-accent" />
-                <div className="space-y-2">
-                  <p className="text-sm uppercase tracking-widest font-bold">Investigación en Curso</p>
-                  <div className="flex flex-col gap-2 items-start text-[10px] uppercase tracking-tighter">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${isLoading === 'predict' ? 'bg-noir-accent animate-ping' : prediction ? 'bg-green-500' : 'bg-noir-muted'}`} />
-                      <span className={prediction ? 'text-green-500' : 'text-noir-muted'}>Paso 1: Análisis de Probabilidades (ML)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${isLoading === 'classify' ? 'bg-noir-accent animate-ping' : classification ? 'bg-green-500' : 'bg-noir-muted'}`} />
-                      <span className={classification ? 'text-green-500' : 'text-noir-muted'}>Paso 2: Perfilado del Escenario (BART)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${isLoading === 'narrate' ? 'bg-noir-accent animate-ping' : chronicle ? 'bg-green-500' : 'bg-noir-muted'}`} />
-                      <span className={chronicle ? 'text-green-500' : 'text-noir-muted'}>Paso 3: Generación de la Crónica (Ollama)</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.1, duration: 0.8 }}
+          className="text-[10px] uppercase tracking-[0.35em] text-noir-blood font-mono"
+        >
+          División de Análisis Criminal · Los Ángeles
+        </motion.p>
 
-            {prediction && (
-              <motion.div key="result" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                <ResultsDashboard data={{ 
-                  prediccion_ml: prediction, 
-                  clasificacion_hf: classification || { todas_etiquetas: {}, modelo: "Esperando..." }
-                }} />
+        {/* CTA */}
+        <motion.button
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          onClick={handleStart}
+          disabled={starting}
+          className="
+            group relative mt-2 px-10 py-3.5
+            border border-red-900 text-red-800
+            text-[10px] uppercase tracking-[0.45em] font-bold font-mono
+            hover:bg-red-950/50 hover:border-red-700 hover:text-red-500
+            transition-all duration-300 disabled:opacity-40
+            hover:shadow-[0_0_25px_rgba(153,27,27,0.35)]
+          "
+        >
+          {starting ? (
+            <span className="flex items-center gap-3">
+              <span className="inline-block w-2.5 h-2.5 border-t border-red-700 rounded-full animate-spin" />
+              Accediendo al Sistema...
+            </span>
+          ) : (
+            <>
+              Iniciar Investigación
+              <span className="absolute -bottom-px left-0 w-full h-px bg-red-900 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
+            </>
+          )}
+        </motion.button>
 
-                {chronicle && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 border-b border-noir-border pb-2">
-                      <span className="text-xs font-bold uppercase tracking-widest">Crónica Narrativa</span>
-                      <span className="text-[10px] text-noir-muted uppercase">(Ollama: gemma2:2b)</span>
-                    </div>
-                    <TypewriterChronicle text={chronicle} />
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Data counter */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.35 }}
+          transition={{ delay: 2.2, duration: 1 }}
+          className="flex flex-col items-center gap-1"
+        >
+          <p className="text-[8px] uppercase tracking-[0.3em] text-gray-700 font-mono">
+            663,210 expedientes · 2020 – 2023 · L.A. County
+          </p>
+          <p className="text-[7px] text-noir-blood/40 font-mono tracking-widest">
+            ◈ USO EXCLUSIVO PARA INVESTIGACIÓN ◈
+          </p>
+        </motion.div>
       </div>
-
-      <footer className="mt-12 pt-6 border-t border-noir-border text-[9px] uppercase tracking-[0.5em] text-center text-noir-muted">
-        Runojanh Police AI Division &copy; 2026 - L.A. Precinct
-      </footer>
     </main>
   );
 }

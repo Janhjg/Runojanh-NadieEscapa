@@ -1,21 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-noir-bg: #050505;
-  --color-noir-card: #0d0d0d;
-  --color-noir-fore: #e0e0e0;
-  --color-noir-accent: #b91c1c;
-  --color-noir-muted: #525252;
-  --color-noir-border: #262626;
+  --color-noir-bg:      #030303;
+  --color-noir-card:    #0a0a0a;
+  --color-noir-dim:     #111111;
+  --color-noir-fore:    #d4d4d4;
+  --color-noir-muted:   #4a4a4a;
+  --color-noir-ink:     #7a7a7a;
+  --color-noir-accent:  #991b1b;
+  --color-noir-blood:   #5c0a0a;
+  --color-noir-border:  #1f1f1f;
+  --color-noir-glow:    rgba(153,27,27,0.2);
 
   --font-noir: "Special Elite", "Courier New", Courier, monospace;
 }
 
 :root {
-  --background: #050505;
-  --foreground: #e0e0e0;
+  --background: #030303;
+  --foreground: #d4d4d4;
 }
 
+/* ── Base ─────────────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
@@ -24,53 +29,139 @@ body {
   position: relative;
 }
 
-/* Texture de grano de fondo sutil */
+/* ── Vignette permanente en las 4 esquinas ───────────────────── */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background:
+    radial-gradient(ellipse 120% 120% at 50% 50%, transparent 55%, rgba(0,0,0,0.85) 100%);
+}
+
+/* ── Grain de fondo ──────────────────────────────────────────── */
 body::before {
   content: "";
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   pointer-events: none;
-  z-index: 50;
-  opacity: 0.03;
-  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  z-index: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
 }
 
-/* Scrollbar personalizada */
-::-webkit-scrollbar {
-  width: 6px;
-}
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 5px; }
+::-webkit-scrollbar-track    { background: #080808; }
+::-webkit-scrollbar-thumb    { background: #1f1f1f; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #991b1b; }
 
-::-webkit-scrollbar-track {
-  background: #0d0d0d;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #262626;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #b91c1c;
-}
-
+/* ── Cards ───────────────────────────────────────────────────── */
 .noir-card {
-  @apply bg-noir-card border border-noir-border rounded-sm p-4;
-  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.5);
+  background: var(--color-noir-card);
+  border: 1px solid var(--color-noir-border);
+  border-radius: 0;
+  padding: 1rem;
+  box-shadow: 0 4px 32px -8px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
+.noir-card-accent {
+  border-left: 2px solid var(--color-noir-accent);
+}
+
+/* ── Línea de expediente decorativa ─────────────────────────── */
+.case-number {
+  font-family: var(--font-noir);
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-noir-blood);
+  opacity: 0.7;
+}
+
+/* ── Scan lines (overlay sutil) ──────────────────────────────── */
+.scanlines {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.07) 0px,
+    rgba(0,0,0,0.07) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 1;
+}
+
+/* ── Typewriter cursor ───────────────────────────────────────── */
 .typewriter-cursor {
   display: inline-block;
   width: 2px;
-  height: 1.2em;
-  background: var(--foreground);
+  height: 1.1em;
+  background: var(--color-noir-accent);
   margin-left: 2px;
-  animation: blink 1s infinite;
+  vertical-align: text-bottom;
+  animation: blink 0.9s step-end infinite;
 }
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  50%       { opacity: 0; }
+}
+
+/* ── Glow badge ─────────────────────────────────────────────── */
+.glow-red {
+  box-shadow: 0 0 18px rgba(153,27,27,0.45), 0 0 6px rgba(153,27,27,0.3);
+}
+
+/* ── Module color accents (muted) ────────────────────────────── */
+.accent-predict  { --mod-color: #1e3a5f; --mod-text: #60a5fa; }
+.accent-classify { --mod-color: #2d1b4e; --mod-text: #a78bfa; }
+.accent-narrate  { --mod-color: #3d2600; --mod-text: #d97706; }
+.accent-full     { --mod-color: #0d2615; --mod-text: #34d399; }
+
+/* ── Glitch keyframe (splash) ────────────────────────────────── */
+@keyframes glitch-shift {
+  0%, 100% { clip-path: inset(0 0 95% 0); transform: translate(-2px, 0); }
+  25%       { clip-path: inset(40% 0 40% 0); transform: translate(2px, 0); }
+  50%       { clip-path: inset(80% 0 5% 0);  transform: translate(-1px, 0); }
+  75%       { clip-path: inset(20% 0 65% 0); transform: translate(1px, 0); }
+}
+
+@keyframes text-glitch {
+  0% { text-shadow: 2px 0 var(--color-noir-blood), -2px 0 blue; }
+  5% { text-shadow: none; filter: blur(0); }
+  10% { filter: blur(1px); }
+  15% { filter: blur(0); text-shadow: -1px 0 var(--color-noir-accent), 1px 0 blue; }
+  20%, 100% { text-shadow: none; filter: none; }
+}
+
+.glitch-layer {
+  animation: glitch-shift 0.15s steps(1) infinite;
+}
+
+.glitch-text-frequent {
+  position: relative;
+  animation: text-glitch 4s ease-in-out infinite;
+}
+
+.glitch-hover:hover {
+  animation: text-glitch 0.3s ease-in-out infinite;
+}
+
+/* ── Police tape line ───────────────────────────────────────── */
+.tape-line {
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-noir-blood) 0px,
+    var(--color-noir-blood) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  opacity: 0.4;
 }
