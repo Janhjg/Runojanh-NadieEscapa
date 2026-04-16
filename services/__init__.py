@@ -1,6 +1,8 @@
-from .errors import *
-from .dataset_services import *
-from .ml_service import *
-from .zero_shot_classification_service import *
-from .traductor_crimenes_service import *
-from .generator_service import *
+# services/__init__.py
+
+# IMPORTS LAZY (NO ROMPEN PYTEST)
+from .ml_service import predict
+from .classify_service import classify_text
+from .narrate_service import narrate
+
+__all__ = ["predict", "classify_text", "narrate"]

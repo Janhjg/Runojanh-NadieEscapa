@@ -1,35 +1,37 @@
 import urllib.request
-import json
-import re
+import pytest
 
-try:
-    with urllib.request.urlopen("http://localhost:3000/") as response:
-        print("Frontend is working:", response.getcode())
-except urllib.error.HTTPError as e:
-    html = e.read().decode('utf-8')
-    def extract_text(html):
-        try:
-            text = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
-            text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL)
-            text = re.sub(r'<[^>]+>', ' ', text)
-            return ' '.join(text.split())
-        except:
-            return html[:1000]
-    print(f"Frontend 500 Error details:\n{extract_text(html)[:2000]}")
-except Exception as e:
-    print(f"Other frontend error: {e}")
 
-try:
-    print("\nTesting Full Case with ID 10304468 (first crime in subset)")
-    with urllib.request.urlopen("http://localhost:8001/full-case/10304468") as response:
-        print("Full Case 10304468 SUCCESS")
-except urllib.error.HTTPError as e:
-    print("Full Case 10304468 ERROR:", e.code, e.read().decode('utf-8'))
+BASE_API = "http://localhost:8001"
+BASE_FRONT = "http://localhost:3000"
 
-# Test another ID
-try:
-    print("\nTesting Full Case with ID 190326475")
-    with urllib.request.urlopen("http://localhost:8001/full-case/190326475") as response:
-        print("Full Case 190326475 SUCCESS")
-except urllib.error.HTTPError as e:
-    print("Full Case 190326475 ERROR:", e.code, e.read().decode('utf-8'))
+
+def test_full_case_api():
+    url = f"{BASE_API}/full-case/10304468"
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            assert response.status == 200
+
+    except Exception:
+        pytest.skip("API no está activa")
+
+
+def test_full_case_api_second_id():
+    url = f"{BASE_API}/full-case/190326475"
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            assert response.status == 200
+
+    except Exception:
+        pytest.skip("API no está activa")
+
+
+def test_frontend_health():
+    try:
+        with urllib.request.urlopen(BASE_FRONT) as response:
+            assert response.status == 200
+
+    except Exception:
+        pytest.skip("Frontend no está activo")

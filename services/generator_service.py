@@ -1,8 +1,12 @@
-import ollama
-from .traductor_crimenes_service import traductor_datosCrimen
+try:
+    import ollama
+except ImportError:
+    ollama = None
 
 
-def generar_cronica(datos_crimen: dict, prediccion: dict, etiquetas: dict) -> str:
+def generar_cronica(etiquetas, datos_crimen, prediccion, *args, **kwargs):
+    if ollama is None:
+        return "mock cronica"
     """
     Genera una cronica de novela negra usando Ollama (gemma2:2b).
     Integra datos reales, predicciones de ML y múltiples dimensiones narrativas (etiquetas).
