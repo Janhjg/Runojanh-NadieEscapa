@@ -1,4 +1,6 @@
-def traductor_datosCrimen(datos: dict, VObjetiva=None):
+def traductor_datosCrimen(datos_orig: dict, VObjetiva=None):
+    # Hacer una copia para no mutar el original (que se usa en ML)
+    datos = datos_orig.copy()
 
     # NIVEL
     datos["Part 1-2"] = "Grave (Part 1)" if datos.get("Part 1-2") == 1 else "Leve (Part 2)"

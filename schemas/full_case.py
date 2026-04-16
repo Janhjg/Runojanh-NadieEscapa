@@ -9,6 +9,7 @@ class FullCaseNewInput(BaseModel):
  
  
 class FullCaseOutput(BaseModel):
+    id: int = Field(..., description="ID asignado al nuevo caso de usuario")
     datos_caso: PredictNewInput = Field(..., description="Datos del crimen procesado")
     prediccion_ml: PredictOutput = Field(..., description="Resultado del modelo ML")
     clasificacion_hf: ClassifyOutput = Field(..., description="Resultado del modelo HuggingFace")

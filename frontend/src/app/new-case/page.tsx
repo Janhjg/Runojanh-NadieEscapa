@@ -12,6 +12,7 @@ export default function NewCasePage() {
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
+  const [currentId, setCurrentId] = useState<number | null>(null);
   const [currentCrime, setCurrentCrime] = useState<any>(null);
   const [prediction, setPrediction] = useState<any>(null);
   const [classification, setClassification] = useState<any>(null);
@@ -22,6 +23,7 @@ export default function NewCasePage() {
     setPrediction(null);
     setClassification(null);
     setChronicle(null);
+    setCurrentId(null);
     setError(null);
   };
 
@@ -31,16 +33,19 @@ export default function NewCasePage() {
     
     try {
       setIsLoading('predict');
-      const predictData = await predictCrime(formData);
-      setPrediction(predictData);
+      const { submitFullCase } = await import('@/services/api');
+      const fullData = await submitFullCase(formData);
       
+      setPrediction(fullData.prediccion_ml);
       setIsLoading('classify');
-      const classifyData = await classifyCrime(formData, predictData);
-      setClassification(classifyData);
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulacion de delay visual
       
+      setClassification(fullData.clasificacion_hf);
       setIsLoading('narrate');
-      const narrateData = await narrateCrime(formData, predictData, classifyData.todas_etiquetas);
-      setChronicle(narrateData.cronica);
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulacion de delay visual
+
+      setChronicle(fullData.cronica);
+      if (fullData.id) setCurrentId(fullData.id);
       
     } catch (err: any) {
       setError(err.message || 'Error en la investigación');
@@ -140,6 +145,19 @@ export default function NewCasePage() {
                       </div>
                       <div className="bg-[#050505] p-8 border border-gray-800 rounded-xl">
                         <TypewriterChronicle text={chronicle} />
+                        
+                        {currentId && (
+                           <div className="mt-8 flex justify-center">
+                             <a
+                               href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'}/export/pdf/${currentId}`}
+                               target="_blank"
+                               rel="noreferrer"
+                               className="bg-red-900/30 hover:bg-red-600 border border-red-600 text-red-500 hover:text-white px-8 py-3 tracking-[0.2em] uppercase text-sm font-black flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)] hover:shadow-[0_0_25px_rgba(220,38,38,0.5)]"
+                             >
+                               Descargar Expediente PDF
+                             </a>
+                           </div>
+                        )}
                       </div>
                     </div>
                   )}

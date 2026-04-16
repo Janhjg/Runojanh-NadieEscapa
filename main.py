@@ -463,6 +463,7 @@ def full_case_new(data: FullCaseNewInput):
         })
         
         return FullCaseOutput(
+            id               = nuevo_caso["user_case_id"],
             datos_caso       = data.datos_crimen,
             prediccion_ml    = prediccion,
             clasificacion_hf = clasificacion,
@@ -491,14 +492,23 @@ def full_case_by_id(id: int):
             error_404(f"No se encontro ningun crimen ni caso de usuario con ID {id}")
 
         # Normalización de datos para los servicios
+        def to_int(v, default=0):
+            if isinstance(v, int): return v
+            if isinstance(v, str):
+                if "Grave" in v or "1" in v: return 1
+                if "Leve" in v or "2" in v: return 2
+                try: return int(float(v))
+                except: pass
+            return default
+
         datos_modelo = {
             "DATE OCC":      crimen.get("DATE_OCC", crimen.get("DATE OCC", "")),
-            "TIME OCC":      crimen.get("TIME_OCC", crimen.get("TIME OCC", 0)),
+            "TIME OCC":      to_int(crimen.get("TIME_OCC", crimen.get("TIME OCC", 1200))),
             "AREA NAME":     crimen.get("AREA_NAME", crimen.get("AREA NAME", "")),
-            "Rpt Dist No":   crimen.get("Rpt_Dist_No", crimen.get("Rpt Dist No", 0)),
-            "Part 1-2":      crimen.get("Part_1_2", crimen.get("Part 1-2", 2)),
+            "Rpt Dist No":   to_int(crimen.get("Rpt_Dist_No", crimen.get("Rpt Dist No", 0))),
+            "Part 1-2":      to_int(crimen.get("Part_1_2", crimen.get("Part 1-2", 1)), default=1),
             "Crm Cd Desc":   crimen.get("Crm_Cd_Desc", crimen.get("Crm Cd Desc", "")),
-            "Vict Age":      crimen.get("Vict_Age", crimen.get("Vict Age", 0)),
+            "Vict Age":      to_int(crimen.get("Vict_Age", crimen.get("Vict Age", 0))),
             "Vict Sex":      crimen.get("Vict_Sex", crimen.get("Vict Sex", "X")),
             "Vict Descent":  crimen.get("Vict_Descent", crimen.get("Vict Descent", "X")),
             "Premis Desc":   crimen.get("Premis_Desc", crimen.get("Premis Desc", "")),
