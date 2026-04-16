@@ -27,9 +27,7 @@ user_case_counter: int = 1
 # DATASET ORIGINAL
 # ══════════════════════════════════════════════════════════════
 
-def get_all_crimes(
-    limit: int = 20,
-    offset: int = 0,
+def get_filtered_df(
     area: int | None = None,
     crm_cd: int | None = None,
     part_1_2: int | None = None,
@@ -39,23 +37,34 @@ def get_all_crimes(
     weapon_used_cd: int | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-) -> dict:
-
+    area_name: str | None = None,
+    crime_desc: str | None = None,
+    vict_age_min: int | None = None,
+    vict_age_max: int | None = None,
+    time_occ_min: int | None = None,
+    time_occ_max: int | None = None,
+    status_desc: str | None = None,
+    weapon_desc: str | None = None,
+    premis_desc: str | None = None,
+    dr_no: int | None = None,
+) -> pd.DataFrame:
     if df.empty:
-        return {
-            "total": 0,
-            "limit": limit,
-            "offset": offset,
-            "filters_applied": {},
-            "crimes": []
-        }
+        return pd.DataFrame()
 
     filtered = df.copy()
 
-    # ── Aplicar filtros solo si se reciben ────────────────────
     try:
+        if dr_no is not None:
+            filtered = filtered[filtered["DR_NO"] == dr_no]
+
         if area is not None:
             filtered = filtered[filtered["AREA"] == area]
+        
+        if area_name is not None:
+            filtered = filtered[filtered["AREA_NAME"].astype(str).str.contains(area_name, case=False, na=False)]
+
+        if crime_desc is not None:
+            filtered = filtered[filtered["Crm_Cd_Desc"].astype(str).str.contains(crime_desc, case=False, na=False)]
 
         if crm_cd is not None:
             filtered = filtered[filtered["Crm_Cd"] == crm_cd]
@@ -69,11 +78,32 @@ def get_all_crimes(
         if vict_descent is not None:
             filtered = filtered[filtered["Vict_Descent"].astype(str).str.upper() == vict_descent.upper()]
 
+        if status_desc is not None:
+            filtered = filtered[filtered["Status_Desc"].astype(str).str.contains(status_desc, case=False, na=False)]
+
+        if weapon_desc is not None:
+            filtered = filtered[filtered["Weapon_Desc"].astype(str).str.contains(weapon_desc, case=False, na=False)]
+
+        if premis_desc is not None:
+            filtered = filtered[filtered["Premis_Desc"].astype(str).str.contains(premis_desc, case=False, na=False)]
+
         if premis_cd is not None:
             filtered = filtered[filtered["Premis_Cd"] == premis_cd]
 
         if weapon_used_cd is not None:
             filtered = filtered[filtered["Weapon_Used_Cd"] == weapon_used_cd]
+
+        if vict_age_min is not None:
+            filtered = filtered[filtered["Vict_Age"] >= int(vict_age_min)]
+        
+        if vict_age_max is not None:
+            filtered = filtered[filtered["Vict_Age"] <= int(vict_age_max)]
+
+        if time_occ_min is not None:
+            filtered = filtered[filtered["TIME_OCC"] >= int(time_occ_min)]
+        
+        if time_occ_max is not None:
+            filtered = filtered[filtered["TIME_OCC"] <= int(time_occ_max)]
 
         if date_from is not None:
             filtered = filtered[
@@ -87,8 +117,33 @@ def get_all_crimes(
                 pd.to_datetime(date_to, dayfirst=False, errors="coerce")
             ]
 
-    except KeyError as e:
-        print(f"Columna no encontrada al filtrar: {e}")
+    except Exception as e:
+        print(f"Error al filtrar: {e}")
+
+    return filtered
+
+def get_unique_values(column: str) -> list:
+    if df.empty or column not in df.columns:
+        return []
+    return sorted([str(x) for x in df[column].unique() if pd.notna(x)])
+
+def get_all_crimes(
+    limit: int = 20,
+    offset: int = 0,
+    **filters
+) -> dict:
+
+    filtered = get_filtered_df(**filters)
+    
+    if filtered.empty and not df.empty and any(v is not None for v in filters.values()):
+         # Si hay filtros y no hay resultados
+         return {
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "filters_applied": {k: v for k, v in filters.items() if v is not None},
+            "crimes": []
+        }
 
     total  = len(filtered)
     subset = filtered.iloc[offset:offset + limit]
@@ -106,19 +161,7 @@ def get_all_crimes(
         "total": total,
         "limit": limit,
         "offset": offset,
-        "filters_applied": {
-            k: v for k, v in {
-                "area": area,
-                "crm_cd": crm_cd,
-                "part_1_2": part_1_2,
-                "vict_sex": vict_sex,
-                "vict_descent": vict_descent,
-                "premis_cd": premis_cd,
-                "weapon_used_cd": weapon_used_cd,
-                "date_from": date_from,
-                "date_to": date_to,
-            }.items() if v is not None
-        },
+        "filters_applied": {k: v for k, v in filters.items() if v is not None},
         "crimes": crimes
     }
 

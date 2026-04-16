@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Folder, Brain, Tag, BookOpen, Archive, PlusCircle } from 'lucide-react';
+import { Folder, Brain, Tag, BookOpen, Archive, PlusCircle, BarChart3 } from 'lucide-react';
 
 const menuItems = [
   {
@@ -12,6 +12,14 @@ const menuItems = [
     href: '/crimes',
     color: 'text-gray-400',
     border: 'border-gray-800'
+  },
+  {
+    title: 'Monitor Táctico',
+    desc: 'Mapa de calor y estadísticas globales de criminalidad en Los Ángeles.',
+    icon: BarChart3,
+    href: '/stats',
+    color: 'text-green-400',
+    border: 'border-green-800'
   },
   {
     title: 'Predicción ML',

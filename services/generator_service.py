@@ -107,8 +107,8 @@ def generar_cronica(datos_crimen: dict, prediccion: dict, etiquetas: dict) -> st
     1. {identity_anchor}
     2. Estilo Noir: Prosa rítmica, cínica, frases cortas.
     3. Atmósfera: Los Ángeles nocturno, calles del barrio dado.
-    4. Los DATOS DEL CRIMEN son hechos reales. Los matices narrativos son solo sugerencias de tono.
-    5. Final: Insinúa el destino de "{prediccion.get('clase_predicha')}".
+    4. Los DATOS DEL CRIMEN son hechos reales. No los listes como un informe policial; intégralos en la atmósfera (ej. en lugar de "Simple Assault", descríbelo como una agresión cobarde o un ataque repentino en las sombras).
+    5. Final: Narra el destino de la investigación basado en "{prediccion.get('clase_predicha')}". Evita frases técnicas como "el caso es un NO arresto"; en su lugar, describe cómo el sospechoso se desvanece en la impunidad o cómo la justicia finalmente cierra el grillete.
     6. Extensión: 200-250 palabras. Empieza directamente con la historia.
     7. Usar el idioma espanol
     

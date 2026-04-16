@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { fetchFullCaseById } from '@/services/api';
 import ResultsDashboard from '@/components/ResultsDashboard';
 import TypewriterChronicle from '@/components/TypewriterChronicle';
-import { Archive, Activity, Search, AlertTriangle, FileSearch } from 'lucide-react';
+import { Archive, Activity, Search, AlertTriangle, FileSearch, Volume2, Square, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 
@@ -14,6 +14,12 @@ function FullCaseContent() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
   useEffect(() => {
     const qid = searchParams.get('id');
@@ -41,6 +47,79 @@ function FullCaseContent() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleFetch(id);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, [audio]);
+
+  const handleListen = async () => {
+    if (!result?.cronica) return;
+    
+    if (isPlaying && audio) {
+      audio.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    setAudioLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/tts/narrate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: result.cronica })
+      });
+      
+      if (!res.ok) throw new Error('Error al generar audio');
+      
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const newAudio = new Audio(url);
+      
+      newAudio.onended = () => setIsPlaying(false);
+      setAudio(newAudio);
+      newAudio.play();
+      setIsPlaying(true);
+    } catch (err: any) {
+      console.error(err);
+      if (err.message.includes('quota')) {
+        setError("Límite de voz (ElevenLabs) agotado para este mes.");
+      } else if (err.message.includes('paid_plan')) {
+        setError("Esta voz requiere un plan de pago. Contacte al administrador.");
+      } else {
+        setError("Error al conectar con el servicio de voz. Verifique su conexión.");
+      }
+    } finally {
+      setAudioLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!result) return;
+    const caseId = result.id || result.registro_id;
+    setPdfLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/export/pdf/${caseId}`);
+      if (!res.ok) throw new Error('Error al generar PDF');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Expediente_LAPD_${caseId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo descargar el expediente.");
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   return (
@@ -105,6 +184,17 @@ function FullCaseContent() {
             exit={{ opacity: 0 }}
             className="space-y-12"
           >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-green-500 uppercase tracking-widest">Panel de Evidencias</h2>
+              <button
+                onClick={handleDownloadPDF}
+                disabled={pdfLoading}
+                className="flex items-center gap-2 bg-green-900/30 hover:bg-green-600 border border-green-600 text-white px-4 py-2 rounded-lg transition-all disabled:opacity-50 text-xs font-bold tracking-tighter"
+              >
+                {pdfLoading ? <Activity size={16} className="animate-spin" /> : <Download size={16} />}
+                DESCARGAR EXPEDIENTE (PDF)
+              </button>
+            </div>
              <ResultsDashboard data={result} />
              
              <div className="space-y-6 pt-10 border-t-4 border-gray-800 border-dashed">
@@ -114,9 +204,23 @@ function FullCaseContent() {
                  <div className="h-0.5 bg-green-900 flex-grow" />
                </div>
                
-               <div className="bg-[#050a0a] border border-green-900/30 rounded-xl p-8 shadow-2xl">
-                 <TypewriterChronicle text={result.cronica} speed={30} />
-               </div>
+               <div className="bg-[#050a0a] border border-green-900/30 rounded-xl p-8 shadow-2xl relative group">
+                  <button
+                    onClick={handleListen}
+                    disabled={audioLoading}
+                    className="absolute top-4 right-4 z-10 p-3 bg-green-900/20 border border-green-700/50 text-green-500 rounded-lg hover:bg-green-600 hover:text-white transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] disabled:opacity-50"
+                    title={isPlaying ? "Detener narración" : "Escuchar informe (ElevenLabs)"}
+                  >
+                    {audioLoading ? (
+                      <Activity size={20} className="animate-spin" />
+                    ) : isPlaying ? (
+                      <Square size={20} fill="currentColor" />
+                    ) : (
+                      <Volume2 size={20} />
+                    )}
+                  </button>
+                  <TypewriterChronicle text={result.cronica} speed={30} />
+                </div>
              </div>
 
              <footer className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60">

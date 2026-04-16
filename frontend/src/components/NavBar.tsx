@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Database, Brain, Tag, BookOpen, Archive, Shield, Home, AlertTriangle } from 'lucide-react';
+import { Database, Brain, Tag, BookOpen, Archive, Shield, Home, AlertTriangle, BarChart3 } from 'lucide-react';
 
 export default function NavBar() {
   const pathname = usePathname();
@@ -26,12 +26,14 @@ export default function NavBar() {
       case '/full-case': return 'text-green-500 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] bg-green-950/20';
       case '/new-case': return 'text-red-500 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)] bg-red-950/20';
       case '/crimes': return 'text-gray-300 border-gray-500 bg-gray-900/30';
+      case '/stats': return 'text-green-500 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.3)] bg-green-950/20';
       default: return 'text-white border-transparent hover:border-gray-800';
     }
   };
 
   const navLinks = [
     { href: '/crimes', label: 'Archivos', icon: Database },
+    { href: '/stats', label: 'Monitor', icon: BarChart3 },
     { href: '/predict', label: 'Predicción', icon: Brain },
     { href: '/classify', label: 'Clasificar', icon: Tag },
     { href: '/narrate', label: 'Narrativa', icon: BookOpen },

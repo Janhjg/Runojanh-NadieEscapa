@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from typing import Optional
+from collections import Counter
  
 from schemas import (
     CrimeListResponse, CrimeDetailResponse,
@@ -23,6 +25,11 @@ from services import (
 )
 from services import predict
 from services import construir_clasificacion
+from services.tts_service import generate_voice_narration
+from services.pdf_service import generate_case_pdf
+
+class TTSInput(BaseModel):
+    text: str
 
 app = FastAPI(
     title="Runojanh - The Dark Chronicles",
@@ -36,6 +43,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Coordenadas aproximadas de las estaciones centrales de cada área de la LAPD
+AREA_COORDINATES = {
+    "Central": [34.0443, -118.2474],
+    "Southwest": [34.0105, -118.3298],
+    "Hollenbeck": [34.0450, -118.2121],
+    "Harbor": [33.7577, -118.2882],
+    "Hollywood": [34.0958, -118.3307],
+    "77th Street": [33.9703, -118.2731],
+    "Newton": [34.0124, -118.2565],
+    "Pacific": [33.9917, -118.4190],
+    "Van Nuys": [34.1867, -118.4481],
+    "West LA": [34.0440, -118.4507],
+    "Northeast": [34.1192, -118.2494],
+    "77th street": [33.9703, -118.2731],
+    "Mission": [34.2727, -118.4682],
+    "Topanga": [34.2214, -118.6019],
+    "Olympic": [34.0502, -118.2915],
+    "West Valley": [34.1934, -118.5361],
+    "Southeast": [33.9377, -118.2759],
+    "North Hollywood": [34.1718, -118.3842],
+    "Foothill": [34.2533, -118.4104],
+    "Devonshire": [34.2570, -118.5276],
+    "Rampart": [34.0567, -118.2671],
+    "Wilshire": [34.0467, -118.3424],
+}
  
  
 @app.get("/", tags=["Home"])
@@ -96,6 +129,16 @@ def crimes_list(
     weapon_used_cd: Optional[int] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    area_name: Optional[str] = None,
+    crime_desc: Optional[str] = None,
+    vict_age_min: Optional[int] = None,
+    vict_age_max: Optional[int] = None,
+    time_occ_min: Optional[int] = None,
+    time_occ_max: Optional[int] = None,
+    status_desc: Optional[str] = None,
+    weapon_desc: Optional[str] = None,
+    premis_desc: Optional[str] = None,
+    dr_no: Optional[int] = None,
 ):
     if limit <= 0 or offset < 0:
         error_422("limit debe ser mayor que 0 y offset no puede ser negativo")
@@ -112,32 +155,44 @@ def crimes_list(
         weapon_used_cd=weapon_used_cd,
         date_from=date_from,
         date_to=date_to,
+        area_name=area_name,
+        crime_desc=crime_desc,
+        vict_age_min=vict_age_min,
+        vict_age_max=vict_age_max,
+        time_occ_min=time_occ_min,
+        time_occ_max=time_occ_max,
+        status_desc=status_desc,
+        weapon_desc=weapon_desc,
+        premis_desc=premis_desc,
+        dr_no=dr_no
     )
 
 @app.get("/crimes/meta", tags=["Dataset"])
 def crimes_meta():
-    """Devuelve los valores únicos disponibles para los filtros desplegables del explorador."""
-    from services.dataset_services import df
-    if df.empty:
-        return {}
+    from services.dataset_services import get_unique_values
     
-    areas_raw = df[["AREA", "AREA_NAME"]].drop_duplicates().sort_values("AREA_NAME")
-    areas = [{"id": int(r["AREA"]), "name": str(r["AREA_NAME"])} for _, r in areas_raw.iterrows()]
-    
+    unique_areas = get_unique_values("AREA_NAME")
+    unique_descents = get_unique_values("Vict_Descent")
+    unique_sexes = get_unique_values("Vict_Sex")
+    unique_statuses = get_unique_values("Status_Desc")
+    unique_weapons = get_unique_values("Weapon_Desc")
+    unique_crimes = get_unique_values("Crm_Cd_Desc")
+
     descents_map = {
-        "A": "Asiática", "B": "Negra", "C": "China", "D": "Camboyana",
-        "F": "Filipina", "G": "Guameña", "H": "Hispana/Latinoamericana",
-        "I": "Indígena americana", "J": "Japonesa", "K": "Coreana",
-        "O": "Otros", "P": "Isleña del Pacífico", "S": "Samoana",
-        "U": "Hawaiana", "V": "Vietnamita", "W": "Blanca",
-        "X": "Desconocida", "Z": "Asiático indio"
+        "A": "Asiático", "B": "Negro", "C": "Chino", "D": "Camboyano",
+        "F": "Filipino", "G": "Guameño", "H": "Hispano", "I": "Indígena",
+        "J": "Japonés", "K": "Coreano", "O": "Otros", "P": "Isleño",
+        "S": "Samoano", "U": "Hawaiano", "V": "Vietnamita", "W": "Blanco",
+        "X": "Desconocido", "Z": "India"
     }
-    descents_raw = sorted(df["Vict_Descent"].dropna().unique().tolist())
-    descents = [{"code": c, "label": descents_map.get(c, c)} for c in descents_raw]
-    
+
     return {
-        "areas": areas,
-        "descents": descents,
+        "areas": [{"id": i, "name": a} for i, a in enumerate(unique_areas)],
+        "descents": [{"code": c, "label": descents_map.get(c, c)} for c in unique_descents],
+        "sexes": [{"code": s, "label": "Masculino" if s == "M" else "Femenino" if s == "F" else "Otros"} for s in unique_sexes],
+        "statuses": unique_statuses,
+        "weapons": unique_weapons,
+        "crimes": unique_crimes
     }
 
 @app.get("/user-cases", tags=["Dataset"])
@@ -366,6 +421,14 @@ def narrate_by_id(id: int):
         "registro_id": id,
         "cronica": cronica
     }
+
+@app.post("/tts/narrate", tags=["IA Generativa"])
+def tts_narrate(data: TTSInput):
+    try:
+        audio_content = generate_voice_narration(data.text)
+        return Response(content=audio_content, media_type="audio/mpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
  
  
 # Full Case
@@ -411,16 +474,22 @@ def full_case_new(data: FullCaseNewInput):
 
 @app.get("/full-case/{id}", response_model=FullCaseByIdOutput, tags=["Full Case"])
 def full_case_by_id(id: int):
-    if id <= 0:
-        error_422("El ID debe ser un numero positivo")
-
-    crimen = fetch_crime_by_id(id)
-    if crimen is None:
-        crimen = fetch_user_case_by_id(id)
-    if crimen is None:
-        error_404(f"No se encontro ningun crimen ni caso de usuario con ID {id}")
-
+    """
+    Simula el proceso completo "Full Case" para un ID:
+    1. Predicción (Random Forest)
+    2. Clasificación de estilos e intenciones (BART-Large)
+    3. Crónica literaria (Gemma)
+    """
     try:
+        if id <= 0:
+            error_422("El ID debe ser un numero positivo")
+
+        crimen = fetch_crime_by_id(id)
+        if crimen is None:
+            crimen = fetch_user_case_by_id(id)
+        if crimen is None:
+            error_404(f"No se encontro ningun crimen ni caso de usuario con ID {id}")
+
         # Normalización de datos para los servicios
         datos_modelo = {
             "DATE OCC":      crimen.get("DATE_OCC", crimen.get("DATE OCC", "")),
@@ -472,4 +541,199 @@ def full_case_by_id(id: int):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en proceso Full Case por ID: {str(e)}")
+
+@app.get("/export/pdf/{id}", tags=["IA Generativa"])
+def export_case_pdf(id: int):
+    try:
+        # Reutilizamos la lógica de Full Case para asegurar que tenemos todos los datos
+        crimen_db = fetch_crime_by_id(id)
+        if not crimen_db:
+            crimen_db = fetch_user_case_by_id(id)
+        if not crimen_db:
+            raise HTTPException(status_code=404, detail=f"Caso {id} no encontrado")
+            
+        # Normalización y obtención de datos completos (ML + NLP + GenAI)
+        datos_modelo = {
+            "DATE OCC":      crimen_db.get("DATE_OCC", crimen_db.get("DATE OCC", "")),
+            "TIME OCC":      crimen_db.get("TIME_OCC", crimen_db.get("TIME OCC", 0)),
+            "AREA NAME":     crimen_db.get("AREA_NAME", crimen_db.get("AREA NAME", "")),
+            "Rpt Dist No":   crimen_db.get("Rpt_Dist_No", crimen_db.get("Rpt Dist No", 0)),
+            "Part 1-2":      crimen_db.get("Part_1_2", crimen_db.get("Part 1-2", 2)),
+            "Crm Cd Desc":   crimen_db.get("Crm_Cd_Desc", crimen_db.get("Crm Cd Desc", "")),
+            "Vict Age":      crimen_db.get("Vict_Age", crimen_db.get("Vict Age", 0)),
+            "Vict Sex":      crimen_db.get("Vict_Sex", crimen_db.get("Vict Sex", "X")),
+            "Vict Descent":  crimen_db.get("Vict_Descent", crimen_db.get("Vict Descent", "X")),
+            "Premis Desc":   crimen_db.get("Premis_Desc", crimen_db.get("Premis Desc", "")),
+            "Weapon Desc":   crimen_db.get("Weapon_Desc", crimen_db.get("Weapon Desc", None)),
+        }
+        
+        # Generar componentes si no existen (simulado para el PDF)
+        pred_res = predict(datos_modelo)
+        clasificacion = construir_clasificacion(datos_modelo, VObjetiva=pred_res.get("clase_predicha"))
+        cronica = generar_cronica(datos_modelo, pred_res, clasificacion["todas_etiquetas"])
+        
+        pdf_data = {
+            "id": id,
+            **datos_modelo,
+            "prediccion": pred_res,
+            "cronica": cronica
+        }
+        
+        pdf_content = generate_case_pdf(pdf_data)
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=Expediente_LAPD_{id}.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
+
+@app.get("/stats/summary", tags=["Estadísticas"])
+def get_stats_summary(
+    area_name: Optional[str] = None,
+    crime_desc: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    vict_age_min: Optional[int] = None,
+    vict_age_max: Optional[int] = None,
+    time_occ_min: Optional[int] = None,
+    time_occ_max: Optional[int] = None,
+    vict_sex: Optional[str] = None,
+    vict_descent: Optional[str] = None,
+    status_desc: Optional[str] = None,
+    weapon_desc: Optional[str] = None,
+    premis_desc: Optional[str] = None,
+    dr_no: Optional[int] = None,
+):
+    from services.dataset_services import get_filtered_df
+    filtered = get_filtered_df(
+        area_name=area_name,
+        crime_desc=crime_desc,
+        date_from=date_from,
+        date_to=date_to,
+        vict_age_min=vict_age_min,
+        vict_age_max=vict_age_max,
+        time_occ_min=time_occ_min,
+        time_occ_max=time_occ_max,
+        vict_sex=vict_sex,
+        vict_descent=vict_descent,
+        status_desc=status_desc,
+        weapon_desc=weapon_desc,
+        premis_desc=premis_desc,
+        dr_no=dr_no
+    )
+    
+    if filtered.empty:
+        return {
+            "total_casos": 0,
+            "arrestos": 0,
+            "pendientes": 0,
+            "tasa_arresto": 0,
+            "top_crimenes": {},
+            "distribucion_horaria": {}
+        }
+    
+    total = len(filtered)
+    
+    # Categorías de Estatus
+    arrested = len(filtered[filtered["Status_Desc"].str.contains("Arrest", case=False, na=False)])
+    no_arrested = len(filtered[filtered["Status_Desc"].str.contains("Other", case=False, na=False)])
+    invest = len(filtered[filtered["Status_Desc"].str.contains("Invest Cont", case=False, na=False)])
+    
+    pending = total - arrested
+    
+    # Top Crímenes
+    top_crimes = filtered["Crm_Cd_Desc"].value_counts().head(5).to_dict()
+    
+    # Crimen por hora (distribución)
+    filtered_stats = filtered.copy()
+    filtered_stats["hour"] = (filtered_stats["TIME_OCC"] // 100).astype(int)
+    hourly_dist = filtered_stats["hour"].value_counts().sort_index().to_dict()
+    
+    return {
+        "total_casos": total,
+        "arrestos": arrested,
+        "no_arrestos": no_arrested,
+        "en_investigacion": invest,
+        "tasa_arresto": round((arrested / total) * 100, 2) if total > 0 else 0,
+        "top_crimenes": top_crimes,
+        "distribucion_horaria": hourly_dist
+    }
+
+@app.get("/stats/geo", tags=["Estadísticas"])
+def get_stats_geo(
+    area_name: Optional[str] = None,
+    crime_desc: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    vict_age_min: Optional[int] = None,
+    vict_age_max: Optional[int] = None,
+    time_occ_min: Optional[int] = None,
+    time_occ_max: Optional[int] = None,
+    vict_sex: Optional[str] = None,
+    vict_descent: Optional[str] = None,
+    status_desc: Optional[str] = None,
+    weapon_desc: Optional[str] = None,
+    premis_desc: Optional[str] = None,
+    dr_no: Optional[int] = None,
+):
+    from services.dataset_services import get_filtered_df
+    filtered = get_filtered_df(
+        area_name=area_name,
+        crime_desc=crime_desc,
+        date_from=date_from,
+        date_to=date_to,
+        vict_age_min=vict_age_min,
+        vict_age_max=vict_age_max,
+        time_occ_min=time_occ_min,
+        time_occ_max=time_occ_max,
+        vict_sex=vict_sex,
+        vict_descent=vict_descent,
+        status_desc=status_desc,
+        weapon_desc=weapon_desc,
+        premis_desc=premis_desc,
+        dr_no=dr_no
+    )
+    
+    if filtered.empty:
+        return []
+    
+    # Tomamos una muestra para no saturar el mapa si hay demasiados (ej. los últimos 300)
+    sample_size = min(300, len(filtered))
+    df_sample = filtered.tail(sample_size).copy()
+    
+    geo_data = []
+    coords_lower = {k.lower(): v for k, v in AREA_COORDINATES.items()}
+    
+    import random
+
+    for _, row in df_sample.iterrows():
+        area = str(row["AREA_NAME"]).strip().lower()
+        if area in coords_lower:
+            base_lat, base_lon = coords_lower[area]
+            
+            # Aplicar Jitter (desplazamiento aleatorio ligero)
+            jitter_lat = base_lat + (random.uniform(-0.015, 0.015))
+            jitter_lon = base_lon + (random.uniform(-0.015, 0.015))
+            
+            # Determinar estatus para el color
+            status_desc = str(row["Status_Desc"]).lower()
+            if "arrest" in status_desc:
+                cat = "arrest"
+            elif "other" in status_desc:
+                cat = "no_arrest"
+            else:
+                cat = "investigation"
+                
+            geo_data.append({
+                "id": str(row["DR_NO"]),
+                "crime": str(row["Crm_Cd_Desc"]),
+                "area": row["AREA_NAME"],
+                "lat": jitter_lat,
+                "lon": jitter_lon,
+                "status": cat
+            })
+            
+    return geo_data
  
